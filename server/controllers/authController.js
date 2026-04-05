@@ -28,7 +28,7 @@ const register = async (req, res) => {
     });
 
     // 4. Generate JWT Token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d' // Token expires in 7 days
     });
 
@@ -36,6 +36,7 @@ const register = async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
       token
     });
   } catch (error) {
@@ -62,7 +63,7 @@ const login = async (req, res) => {
     }
 
     // 3. Generate new token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d'
     });
 
@@ -70,6 +71,7 @@ const login = async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
       token
     });
   } catch (error) {
@@ -136,7 +138,7 @@ const googleLogin = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d'
     });
 
@@ -145,6 +147,7 @@ const googleLogin = async (req, res) => {
       username: user.username,
       email: user.email,
       avatar: user.avatar,
+      isAdmin: user.isAdmin,
       token
     });
   } catch (error) {

@@ -20,6 +20,7 @@ const ChatRoom = () => {
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [togglingPrivacy, setTogglingPrivacy] = useState(false);
 
   // Fetch room details and messages
   useEffect(() => {
@@ -157,6 +158,29 @@ const ChatRoom = () => {
     sendMessage(roomId, user._id, content, false);
   };
 
+  const handleTogglePrivacy = async () => {
+    if (!room || room.owner?._id !== user?._id) return;
+
+    setTogglingPrivacy(true);
+    try {
+      const response = await axios.put(
+        `${API_URL}/rooms/${roomId}`,
+        {
+          isPrivate: !room.isPrivate
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      setRoom(response.data);
+      console.log('✅ Room privacy updated:', response.data.isPrivate ? 'Private' : 'Public');
+    } catch (error) {
+      console.error('❌ Failed to toggle privacy:', error);
+    } finally {
+      setTogglingPrivacy(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-100">
@@ -218,18 +242,41 @@ const ChatRoom = () => {
         {/* Header */}
         <div className="bg-white shadow-sm px-8 py-5 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">
-                #{room.name}
-              </h1>
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-gray-800">
+                  #{room.name}
+                </h1>
+                {room.isPrivate && (
+                  <span className="text-lg" title="Private room">🔒</span>
+                )}
+              </div>
+              <div className="flex items-center gap-4 mt-1">
+                <p className="text-gray-500 text-xs">
+                  👤 Owner: <span className="font-semibold text-gray-700">{room.owner?.username || 'Unknown'}</span>
+                </p>
+              </div>
               {room.description && (
                 <p className="text-gray-500 text-sm mt-1">{room.description}</p>
               )}
             </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-600">
-                <span className="font-semibold">{room.users?.length || 0}</span> members
-              </p>
+            <div className="flex items-center gap-4">
+              {(room.owner?._id === user?._id || room.owner?.toString?.() === user?._id) && (
+                <button
+                  onClick={handleTogglePrivacy}
+                  disabled={togglingPrivacy}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300 hover:border-purple-400 transition disabled:opacity-50 font-medium text-purple-700"
+                  title="Toggle room privacy"
+                >
+                  <span>{room.isPrivate ? '🔒' : '🌐'}</span>
+                  <span>{room.isPrivate ? 'Private' : 'Public'}</span>
+                </button>
+              )}
+              <div className="text-right">
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">{room.users?.length || 0}</span> members
+                </p>
+              </div>
             </div>
           </div>
         </div>

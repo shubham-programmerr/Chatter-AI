@@ -9,6 +9,7 @@ import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import Home from './pages/Home';
 import ChatRoom from './pages/ChatRoom';
+import Admin from './pages/Admin';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -55,6 +56,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ChatRoom />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Admin Route */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <Admin />
                   </ProtectedRoute>
                 }
               />

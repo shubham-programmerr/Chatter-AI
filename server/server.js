@@ -45,6 +45,9 @@ app.use('/api/messages', require('./routes/messages'));
 // Bot Routes
 app.use('/api/bot', require('./routes/bot'));
 
+// Admin Routes
+app.use('/api/admin', require('./routes/admin'));
+
 // --- SOCKET.IO CONNECTION ---
 const socketHandler = require('./socket/socketHandler');
 socketHandler(io);

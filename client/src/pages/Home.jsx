@@ -11,6 +11,7 @@ const Home = () => {
   const [rooms, setRooms] = useState([]);
   const [roomName, setRoomName] = useState('');
   const [roomDescription, setRoomDescription] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,22 +40,28 @@ const Home = () => {
     setIsCreating(true);
 
     try {
+      console.log('✨ Creating room with:', { roomName, roomDescription, isPrivate });
       const response = await axios.post(
         `${API_URL}/rooms`,
         {
           name: roomName,
-          description: roomDescription
+          description: roomDescription,
+          isPrivate
         },
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
 
+      console.log('✅ Room created:', response.data);
       setRooms([response.data, ...rooms]);
       setRoomName('');
       setRoomDescription('');
+      setIsPrivate(false);
     } catch (err) {
-      setError('Failed to create room');
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to create room';
+      console.error('❌ Create room error:', errorMsg, err);
+      setError(errorMsg);
     } finally {
       setIsCreating(false);
     }
@@ -62,7 +69,8 @@ const Home = () => {
 
   const handleJoinRoom = async (roomId) => {
     try {
-      await axios.post(
+      setError('');
+      const response = await axios.post(
         `${API_URL}/rooms/${roomId}/join`,
         {},
         {
@@ -71,6 +79,8 @@ const Home = () => {
       );
       navigate(`/chat/${roomId}`);
     } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Failed to join room';
+      setError(errorMsg);
       console.error('Failed to join room', err);
     }
   };
@@ -112,6 +122,14 @@ const Home = () => {
               <p className="text-sm text-gray-600">Welcome back</p>
               <p className="text-lg font-bold text-gray-800">{user?.username}</p>
             </div>
+            {user?.isAdmin && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="bg-purple-500 hover:bg-purple-600 text-white px-5 py-2.5 rounded-lg transition font-medium shadow-md hover:shadow-lg"
+              >
+                ⚙️ Admin Panel
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-lg transition font-medium shadow-md hover:shadow-lg"
@@ -167,6 +185,20 @@ const Home = () => {
                   />
                 </div>
 
+                <div className="flex items-center gap-3 bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
+                  <input
+                    type="checkbox"
+                    id="isPrivate"
+                    checked={isPrivate}
+                    onChange={(e) => setIsPrivate(e.target.checked)}
+                    className="w-5 h-5 cursor-pointer accent-purple-600"
+                  />
+                  <label htmlFor="isPrivate" className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-gray-700">
+                    <span>🔒</span>
+                    <span>Make this room private</span>
+                  </label>
+                </div>
+
                 <button
                   type="submit"
                   disabled={isCreating}
@@ -201,26 +233,48 @@ const Home = () => {
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition">
-                          #{room.name}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition">
+                            #{room.name}
+                          </h3>
+                          {room.isPrivate && (
+                            <span className="text-lg" title="Private room">🔒</span>
+                          )}
+                        </div>
+                        <p className="text-gray-500 text-xs mt-1">
+                          👤 Owner: <span className="font-semibold">{room.owner?.username || 'Unknown'}</span>
+                        </p>
                         {room.description && (
                           <p className="text-gray-600 mt-2 text-sm leading-relaxed">{room.description}</p>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="text-lg">👥</span>
-                        <span className="text-sm font-medium">
-                          {room.users.length} member{room.users.length !== 1 ? 's' : ''}
-                        </span>
+                      <div className="flex items-center gap-3 text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">👥</span>
+                          <span className="text-sm font-medium">
+                            {room.users.length} member{room.users.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        {room.isPrivate && !room.users.some(u => u._id === user?._id) && (
+                          <div className="flex items-center gap-1 text-red-600 text-xs font-semibold bg-red-50 px-2 py-1 rounded">
+                            <span>🔐</span>
+                            <span>Private</span>
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => handleJoinRoom(room._id)}
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+                        disabled={room.isPrivate && !room.users.some(u => u._id === user?._id) && (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)}
+                        className={`text-white px-6 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 ${
+                          room.isPrivate && !room.users.some(u => u._id === user?._id) && (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                            ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                            : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                        }`}
+                        title={room.isPrivate && !room.users.some(u => u._id === user?._id) && (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id) ? 'You cannot join private rooms' : ''}
                       >
-                        Join
+                        {room.users.some(u => u._id === user?._id) ? 'Enter' : 'Join'}
                       </button>
                     </div>
                   </div>

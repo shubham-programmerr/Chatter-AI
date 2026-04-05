@@ -17,6 +17,14 @@ const roomSchema = new mongoose.Schema({
   isGroup: {
     type: Boolean,
     default: true
+  },
+  isPrivate: {
+    type: Boolean,
+    default: false
+  },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, { timestamps: true });
 
