@@ -67,7 +67,7 @@ const socketHandler = (io) => {
           isBot: isBot || false
         });
 
-        await message.populate('sender', 'username avatar');
+        await message.populate('sender', 'username avatar profilePicture');
 
         // Broadcast to room
         io.to(roomId).emit('messageReceived', message);

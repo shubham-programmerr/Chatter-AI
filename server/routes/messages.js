@@ -7,7 +7,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 router.get('/room/:roomId', async (req, res) => {
   try {
     const messages = await Message.find({ room: req.params.roomId })
-      .populate('sender', 'username avatar')
+      .populate('sender', 'username avatar profilePicture')
       .sort({ createdAt: 1 });
     res.json(messages);
   } catch (error) {
@@ -27,7 +27,7 @@ router.post('/', authMiddleware, async (req, res) => {
       isBot: isBot || false
     });
 
-    await message.populate('sender', 'username avatar');
+    await message.populate('sender', 'username avatar profilePicture');
     res.status(201).json(message);
   } catch (error) {
     res.status(500).json({ error: 'Failed to send message' });
