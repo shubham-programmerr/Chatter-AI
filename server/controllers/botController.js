@@ -1,12 +1,47 @@
 // Using Groq API
 const Groq = require('groq-sdk');
 const { googleSearch, formatSearchResults } = require('../utils/googleSearch');
+const { getWeather, formatWeather } = require('../utils/weatherAPI');
 
 const client = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
 const Message = require('../models/Message');
+
+// Extract location from weather query
+const extractLocation = (query) => {
+  const weatherPatterns = [
+    /weather\s+(?:in|at|of)\s+([^?]+)/i,
+    /([^?]+)\s+weather/i,
+    /what'?s?\s+the\s+weather\s+(?:in|at|of)\s+([^?]+)/i,
+    /temperature\s+(?:in|at|of)\s+([^?]+)/i,
+    /(?:is it|how'?s\s+the\s+weather)\s+(?:in|at|of)\s+([^?]+)/i,
+    /rain\s+(?:in|at|of)\s+([^?]+)/i,
+    /forecast\s+(?:in|at|of)\s+([^?]+)/i
+  ];
+
+  for (let pattern of weatherPatterns) {
+    const match = query.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+
+  return null;
+};
+
+// Determine if query is about weather
+const isWeatherQuery = (query) => {
+  const weatherKeywords = [
+    'weather', 'temperature', 'rain', 'snow', 'cold', 'hot',
+    'forecast', 'climate', 'wind', 'humidity', 'storm',
+    'cloudy', 'sunny', 'hail', 'sleet', 'degrees'
+  ];
+
+  const lowerQuery = query.toLowerCase();
+  return weatherKeywords.some(keyword => lowerQuery.includes(keyword));
+};
 
 // Determine if query needs search
 const shouldSearch = (query) => {
@@ -38,12 +73,28 @@ const handleBotMessage = async (req, res, io) => {
 
     console.log('🔑 API Key:', process.env.GROQ_API_KEY ? '✓ Loaded' : '✗ Missing');
 
+    let weatherInfo = '';
     let searchResults = [];
     let searchContext = '';
 
-    // Check if query needs Google search
-    if (shouldSearch(botPrompt)) {
-      console.log('🔍 Query detected as search query, fetching Google results...');
+    // Check if it's a weather query
+    if (isWeatherQuery(botPrompt)) {
+      console.log('🌤️ Detected weather query');
+      const location = extractLocation(botPrompt);
+      
+      if (location) {
+        console.log('📍 Extracted location:', location);
+        const weather = await getWeather(location);
+        if (weather) {
+          weatherInfo = formatWeather(weather);
+          console.log('✅ Weather data fetched');
+        }
+      }
+    }
+
+    // Check if query needs general search (if not weather or weather search failed)
+    if (!weatherInfo && shouldSearch(botPrompt)) {
+      console.log('🔍 Query detected as search query, fetching results...');
       searchResults = await googleSearch(botPrompt);
       searchContext = formatSearchResults(searchResults);
     }
@@ -53,10 +104,15 @@ const handleBotMessage = async (req, res, io) => {
     const systemPrompt = `You are ChatterAI, a helpful AI assistant in a chat room. Keep responses concise and friendly. 
 Answer questions, help with coding, explain concepts, and engage in meaningful conversation.
 
-${searchContext ? `IMPORTANT: Use the search results below to provide current, accurate, and up-to-date information:
+${weatherInfo ? `The user asked about weather. Here is the current weather data:
+${weatherInfo}
+
+Incorporate this data naturally into your response.` : ''}
+
+${searchContext && !weatherInfo ? `IMPORTANT: Use the search results below to provide current, accurate information:
 ${searchContext}
 
-Base your answer primarily on these search results while maintaining a conversational tone.` : 'Provide helpful information based on your knowledge.'}`;
+Base your answer primarily on these search results.` : ''}`;
 
     const response = await client.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
@@ -76,8 +132,8 @@ Base your answer primarily on these search results while maintaining a conversat
     console.log('✅ Groq response received');
     let botReply = response.choices[0].message.content;
 
-    // Append search results link reference if available
-    if (searchResults.length > 0) {
+    // Append search results link reference if available (but not for weather)
+    if (searchResults.length > 0 && !weatherInfo) {
       botReply += formatSearchResults(searchResults);
     }
 
