@@ -10,6 +10,7 @@ import Register from './components/Auth/Register';
 import Home from './pages/Home';
 import ChatRoom from './pages/ChatRoom';
 import Admin from './pages/Admin';
+import Profile from './pages/Profile';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -66,6 +67,16 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Admin />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Profile Route */}
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 }
               />

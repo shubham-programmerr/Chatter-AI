@@ -1,3 +1,1 @@
-# ChatterAI
-
 ChatterAI is a real-time chat application with room-based messaging, authentication, online presence, typing indicators, file sharing support, AI bot integration, and admin controls for managing users and rooms. It uses a React frontend, Node.js and Express backend, Socket.io for live updates, and MongoDB for persistent data.

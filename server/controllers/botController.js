@@ -1,11 +1,26 @@
 // Using Groq API
 const Groq = require('groq-sdk');
+const { googleSearch, formatSearchResults } = require('../utils/googleSearch');
 
 const client = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
 const Message = require('../models/Message');
+
+// Determine if query needs search
+const shouldSearch = (query) => {
+  const searchKeywords = [
+    'what is', 'who is', 'when', 'where', 'how', 'why',
+    'latest', 'current', 'news', 'today', 'search',
+    'find', 'tell me', 'explain', 'what\'s', 'who\'s',
+    'definition', 'meaning', 'information about',
+    'facts about', 'statistics', 'research'
+  ];
+
+  const lowerQuery = query.toLowerCase();
+  return searchKeywords.some(keyword => lowerQuery.includes(keyword));
+};
 
 const handleBotMessage = async (req, res, io) => {
   try {
@@ -20,7 +35,17 @@ const handleBotMessage = async (req, res, io) => {
       return res.status(400).json({ error: 'Please provide a message for the bot' });
     }
 
-    console.log('🔑 API Key:', process.env.CLAUDE_API_KEY ? '✓ Loaded' : '✗ Missing');
+    console.log('🔑 API Key:', process.env.GROQ_API_KEY ? '✓ Loaded' : '✗ Missing');
+
+    let searchResults = [];
+    let searchContext = '';
+
+    // Check if query needs Google search
+    if (shouldSearch(botPrompt)) {
+      console.log('🔍 Query detected as search query, fetching Google results...');
+      searchResults = await googleSearch(botPrompt);
+      searchContext = formatSearchResults(searchResults);
+    }
 
     // Call Groq API
     console.log('📞 Calling Groq API...');
@@ -30,7 +55,11 @@ const handleBotMessage = async (req, res, io) => {
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful AI assistant in a chat room. Keep responses concise and friendly. Answer questions, help with coding, explain concepts, and engage in meaningful conversation. You are ChatterAI, an AI assistant bot.'
+          content: `You are ChatterAI, a helpful AI assistant in a chat room. Keep responses concise and friendly. 
+Answer questions, help with coding, explain concepts, and engage in meaningful conversation.
+When search results are provided below, use them to give accurate and up-to-date information.
+
+${searchContext ? `\nRecent search results:\n${searchContext}` : ''}`
         },
         {
           role: 'user',
@@ -40,7 +69,13 @@ const handleBotMessage = async (req, res, io) => {
     });
 
     console.log('✅ Groq response received');
-    const botReply = response.choices[0].message.content;
+    let botReply = response.choices[0].message.content;
+
+    // Append search results if available
+    if (searchResults.length > 0) {
+      botReply += formatSearchResults(searchResults);
+    }
+
     console.log('💬 Bot reply:', botReply);
 
     // Save bot message to DB
@@ -53,7 +88,7 @@ const handleBotMessage = async (req, res, io) => {
 
     console.log('💾 Message saved to DB');
 
-    await botMessage.populate('sender', 'username avatar');
+    await botMessage.populate('sender', 'username avatar profilePicture');
 
     // Emit to room via Socket.io
     if (io) {

@@ -131,10 +131,11 @@ const Home = () => {
               </button>
             )}
             <button
-              onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-lg transition font-medium shadow-md hover:shadow-lg"
+              onClick={() => navigate('/profile')}
+              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-5 py-2.5 rounded-lg transition font-medium shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+              title="Edit profile"
             >
-              Logout
+              👤 Profile
             </button>
           </div>
         </div>

@@ -5,6 +5,14 @@ const MessageBubble = ({ message, isCurrentUser, isBot }) => {
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Get user display picture or fallback to initial
+  const getUserDP = () => {
+    if (message.sender?.profilePicture) {
+      return message.sender.profilePicture;
+    }
+    return null;
+  };
+
   if (isBot) {
     return (
       <div className="flex justify-start mb-4 animate-fadeIn">
@@ -30,16 +38,24 @@ const MessageBubble = ({ message, isCurrentUser, isBot }) => {
     <div className={`flex mb-4 animate-fadeIn ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex gap-3 max-w-xs lg:max-w-md xl:max-w-lg ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
         <div className="flex-shrink-0">
-          <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br text-white text-xs font-bold shadow-md"
-            style={{
-              backgroundImage: `linear-gradient(to bottom right, ${
-                ['from-blue-400 to-blue-600', 'from-green-400 to-green-600', 'from-pink-400 to-pink-600', 'from-orange-400 to-orange-600'][
-                  (message.sender?.username?.charCodeAt(0) || 0) % 4
-                ]
-              })`
-            }}>
-            {message.sender?.username?.[0]?.toUpperCase() || 'U'}
-          </div>
+          {getUserDP() ? (
+            <img
+              src={getUserDP()}
+              alt={message.sender?.username || 'User'}
+              className="h-9 w-9 rounded-full object-cover shadow-md border-2 border-white"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br text-white text-xs font-bold shadow-md"
+              style={{
+                backgroundImage: `linear-gradient(to bottom right, ${
+                  ['from-blue-400 to-blue-600', 'from-green-400 to-green-600', 'from-pink-400 to-pink-600', 'from-orange-400 to-orange-600'][
+                    (message.sender?.username?.charCodeAt(0) || 0) % 4
+                  ]
+                })`
+              }}>
+              {message.sender?.username?.[0]?.toUpperCase() || 'U'}
+            </div>
+          )}
         </div>
         <div className={isCurrentUser ? '' : 'flex-1'}>
           {!isCurrentUser && (
