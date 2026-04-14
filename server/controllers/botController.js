@@ -15,7 +15,8 @@ const shouldSearch = (query) => {
     'latest', 'current', 'news', 'today', 'search',
     'find', 'tell me', 'explain', 'what\'s', 'who\'s',
     'definition', 'meaning', 'information about',
-    'facts about', 'statistics', 'research'
+    'facts about', 'statistics', 'research', 'update',
+    'recent', 'new', 'trending', 'breaking'
   ];
 
   const lowerQuery = query.toLowerCase();
@@ -49,17 +50,21 @@ const handleBotMessage = async (req, res, io) => {
 
     // Call Groq API
     console.log('📞 Calling Groq API...');
+    const systemPrompt = `You are ChatterAI, a helpful AI assistant in a chat room. Keep responses concise and friendly. 
+Answer questions, help with coding, explain concepts, and engage in meaningful conversation.
+
+${searchContext ? `IMPORTANT: Use the search results below to provide current, accurate, and up-to-date information:
+${searchContext}
+
+Base your answer primarily on these search results while maintaining a conversational tone.` : 'Provide helpful information based on your knowledge.'}`;
+
     const response = await client.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
-      max_tokens: 1024,
+      max_tokens: 1500,
       messages: [
         {
           role: 'system',
-          content: `You are ChatterAI, a helpful AI assistant in a chat room. Keep responses concise and friendly. 
-Answer questions, help with coding, explain concepts, and engage in meaningful conversation.
-When search results are provided below, use them to give accurate and up-to-date information.
-
-${searchContext ? `\nRecent search results:\n${searchContext}` : ''}`
+          content: systemPrompt
         },
         {
           role: 'user',
@@ -71,7 +76,7 @@ ${searchContext ? `\nRecent search results:\n${searchContext}` : ''}`
     console.log('✅ Groq response received');
     let botReply = response.choices[0].message.content;
 
-    // Append search results if available
+    // Append search results link reference if available
     if (searchResults.length > 0) {
       botReply += formatSearchResults(searchResults);
     }

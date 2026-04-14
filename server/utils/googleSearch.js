@@ -1,52 +1,82 @@
 const axios = require('axios');
-const cheerio = require('cheerio');
 
-// Google Search function using axios and cheerio
+// Using DuckDuckGo API (more reliable than scraping Google)
 const googleSearch = async (query) => {
   try {
-    console.log('🔍 Searching Google for:', query);
+    console.log('🔍 Searching for:', query);
     
-    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    // Try multiple search methods for reliability
+    let results = [];
     
-    // Fetch search results with a browser user agent
-    const response = await axios.get(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
-      timeout: 5000
-    });
+    // Method 1: Try DuckDuckGo Instant Answer API
+    try {
+      const ddgResponse = await axios.get('https://api.duckduckgo.com/', {
+        params: {
+          q: query,
+          format: 'json',
+          no_html: 1,
+          skip_disambig: 1
+        },
+        timeout: 5000
+      });
 
-    const $ = cheerio.load(response.data);
-    const results = [];
+      if (ddgResponse.data.AbstractText) {
+        results.push({
+          title: ddgResponse.data.Heading || 'DuckDuckGo Result',
+          description: ddgResponse.data.AbstractText,
+          link: ddgResponse.data.AbstractURL || 'https://duckduckgo.com/?q=' + encodeURIComponent(query)
+        });
+      }
 
-    // Parse Google search results
-    $('div.g').each((index, element) => {
-      if (results.length >= 3) return; // Get top 3 results
+      // Get related topics as additional results
+      if (ddgResponse.data.RelatedTopics && ddgResponse.data.RelatedTopics.length > 0) {
+        ddgResponse.data.RelatedTopics.slice(0, 3).forEach((topic, index) => {
+          if (topic.Text && topic.FirstURL) {
+            results.push({
+              title: topic.Text.substring(0, 60),
+              description: topic.Text.substring(0, 150),
+              link: 'https://duckduckgo.com' + topic.FirstURL
+            });
+          }
+        });
+      }
+    } catch (ddgError) {
+      console.log('⚠️ DuckDuckGo API error, trying alternative...', ddgError.message);
+    }
 
-      const titleElement = $(element).find('h3');
-      const linkElement = $(element).find('a');
-      const descriptionElement = $(element).find('div[style*="line-height"]');
+    // If DuckDuckGo fails, try a simple web search approach
+    if (results.length === 0) {
+      console.log('📡 Trying alternative search method via Wikipedia...');
+      try {
+        const wikiResponse = await axios.get('https://en.wikipedia.org/w/api.php', {
+          params: {
+            action: 'query',
+            list: 'search',
+            srsearch: query,
+            format: 'json',
+            srlimit: 3
+          },
+          timeout: 5000
+        });
 
-      if (titleElement.length > 0 && linkElement.length > 0) {
-        const title = titleElement.text().trim();
-        const link = linkElement.attr('href');
-        const description = descriptionElement.text().trim() || 'No description available';
-
-        // Filter out unwanted results
-        if (title && link && !link.includes('google.com/search')) {
-          results.push({
-            title,
-            link: link.startsWith('http') ? link : `https://${link}`,
-            description: description.substring(0, 150)
+        if (wikiResponse.data.query.search.length > 0) {
+          wikiResponse.data.query.search.forEach((item) => {
+            results.push({
+              title: item.title,
+              description: item.snippet.replace(/<[^>]*>/g, ''),
+              link: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title)}`
+            });
           });
         }
+      } catch (wikiError) {
+        console.log('⚠️ Wikipedia search error:', wikiError.message);
       }
-    });
+    }
 
     console.log(`✅ Found ${results.length} results`);
     return results;
   } catch (error) {
-    console.error('❌ Google search error:', error.message);
+    console.error('❌ Search error:', error.message);
     return [];
   }
 };
@@ -54,12 +84,12 @@ const googleSearch = async (query) => {
 // Format search results for bot response
 const formatSearchResults = (results) => {
   if (results.length === 0) {
-    return '\n📍 No search results found.';
+    return '';
   }
 
-  let formatted = '\n\n📍 **Search Results:**\n';
+  let formatted = '\n\n📍 **Search Results for Reference:**\n';
   results.forEach((result, index) => {
-    formatted += `\n${index + 1}. **${result.title}**\n   ${result.description}\n   🔗 ${result.link}`;
+    formatted += `\n${index + 1}. **${result.title}**\n   ${result.description.substring(0, 200)}...\n   🔗 [Read More](${result.link})`;
   });
 
   return formatted;
