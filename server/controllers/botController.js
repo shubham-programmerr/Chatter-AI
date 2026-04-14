@@ -2,6 +2,7 @@
 const Groq = require('groq-sdk');
 const { googleSearch, formatSearchResults } = require('../utils/googleSearch');
 const { getWeather, formatWeather } = require('../utils/weatherAPI');
+const { getConversationMemory, formatConversationContext, referencesContext } = require('../utils/botMemory');
 
 const client = new Groq({
   apiKey: process.env.GROQ_API_KEY
@@ -73,6 +74,12 @@ const handleBotMessage = async (req, res, io) => {
 
     console.log('🔑 API Key:', process.env.GROQ_API_KEY ? '✓ Loaded' : '✗ Missing');
 
+    // Load conversation memory
+    console.log('💾 Loading conversation memory...');
+    const conversationHistory = await getConversationMemory(roomId, 8);
+    const conversationContext = formatConversationContext(conversationHistory);
+    const hasContextReference = referencesContext(botPrompt);
+
     let weatherInfo = '';
     let searchResults = [];
     let searchContext = '';
@@ -100,9 +107,13 @@ const handleBotMessage = async (req, res, io) => {
     }
 
     // Call Groq API
-    console.log('📞 Calling Groq API...');
+    console.log('📞 Calling Groq API with memory context...');
     const systemPrompt = `You are ChatterAI, a helpful AI assistant in a chat room. Keep responses concise and friendly. 
 Answer questions, help with coding, explain concepts, and engage in meaningful conversation.
+
+Remember this is a group chat, so be aware of conversation history and context.
+
+${conversationContext}
 
 ${weatherInfo ? `The user asked about weather. Here is the current weather data:
 ${weatherInfo}
@@ -112,7 +123,9 @@ Incorporate this data naturally into your response.` : ''}
 ${searchContext && !weatherInfo ? `IMPORTANT: Use the search results below to provide current, accurate information:
 ${searchContext}
 
-Base your answer primarily on these search results.` : ''}`;
+Base your answer primarily on these search results.` : ''}
+
+${hasContextReference ? 'The user is referencing previous messages - use the conversation history above to provide context-aware responses.' : ''}`;
 
     const response = await client.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
