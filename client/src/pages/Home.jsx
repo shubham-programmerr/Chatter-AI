@@ -12,6 +12,7 @@ const Home = () => {
   const [roomName, setRoomName] = useState('');
   const [roomDescription, setRoomDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
+  const [roomPassword, setRoomPassword] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,13 +41,14 @@ const Home = () => {
     setIsCreating(true);
 
     try {
-      console.log('✨ Creating room with:', { roomName, roomDescription, isPrivate });
+      console.log('✨ Creating room with:', { roomName, roomDescription, isPrivate, hasPassword: !!roomPassword });
       const response = await axios.post(
         `${API_URL}/rooms`,
         {
           name: roomName,
           description: roomDescription,
-          isPrivate
+          isPrivate,
+          password: roomPassword || undefined
         },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -58,6 +60,7 @@ const Home = () => {
       setRoomName('');
       setRoomDescription('');
       setIsPrivate(false);
+      setRoomPassword('');
     } catch (err) {
       const errorMsg = err.response?.data?.error || err.message || 'Failed to create room';
       console.error('❌ Create room error:', errorMsg, err);
@@ -67,12 +70,23 @@ const Home = () => {
     }
   };
 
-  const handleJoinRoom = async (roomId) => {
+  const handleJoinRoom = async (roomId, passwordProtected = false) => {
     try {
       setError('');
+
+      let password = '';
+      // If room is password protected, ask for password
+      if (passwordProtected) {
+        password = prompt('🔐 This room is password protected.\nPlease enter the password:');
+        if (password === null) {
+          // User clicked cancel
+          return;
+        }
+      }
+
       const response = await axios.post(
         `${API_URL}/rooms/${roomId}/join`,
-        {},
+        { password },
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -200,6 +214,25 @@ const Home = () => {
                   </label>
                 </div>
 
+                {isPrivate && (
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-200">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <span>🔐</span>
+                      <span>Room Password (Optional)</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={roomPassword}
+                      onChange={(e) => setRoomPassword(e.target.value)}
+                      placeholder="Enter a PIN code (e.g., 1234)"
+                      className="w-full border border-blue-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white"
+                    />
+                    <p className="text-xs text-gray-600 mt-2">
+                      💡 Leave empty for no password protection, or enter a PIN that people must know to join.
+                    </p>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={isCreating}
@@ -266,16 +299,31 @@ const Home = () => {
                         )}
                       </div>
                       <button
-                        onClick={() => handleJoinRoom(room._id)}
-                        disabled={room.isPrivate && !room.users.some(u => u._id === user?._id) && (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)}
+                        onClick={() => handleJoinRoom(room._id, room.passwordProtected)}
+                        disabled={
+                          room.isPrivate && 
+                          !room.users.some(u => u._id === user?._id) && 
+                          !room.passwordProtected &&
+                          (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                        }
                         className={`text-white px-6 py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 ${
-                          room.isPrivate && !room.users.some(u => u._id === user?._id) && (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                          room.isPrivate && 
+                          !room.users.some(u => u._id === user?._id) && 
+                          !room.passwordProtected &&
+                          (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
                             ? 'bg-gray-400 cursor-not-allowed opacity-50'
                             : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
                         }`}
-                        title={room.isPrivate && !room.users.some(u => u._id === user?._id) && (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id) ? 'You cannot join private rooms' : ''}
+                        title={
+                          room.isPrivate && 
+                          !room.users.some(u => u._id === user?._id) && 
+                          !room.passwordProtected &&
+                          (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                            ? 'Private room - owner only'
+                            : room.passwordProtected ? 'Password protected - enter password to join' : ''
+                        }
                       >
-                        {room.users.some(u => u._id === user?._id) ? 'Enter' : 'Join'}
+                        {room.users.some(u => u._id === user?._id) ? 'Enter' : room.passwordProtected ? '🔐 Join' : 'Join'}
                       </button>
                     </div>
                   </div>

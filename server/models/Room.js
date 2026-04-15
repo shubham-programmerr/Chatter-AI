@@ -25,6 +25,14 @@ const roomSchema = new mongoose.Schema({
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  password: {
+    type: String,
+    default: null // null = no password protection
+  },
+  passwordProtected: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

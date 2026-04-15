@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-const RoomList = ({ rooms, currentRoomId }) => {
+const RoomList = ({ rooms, currentRoomId, onJoinRoom }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -10,14 +10,19 @@ const RoomList = ({ rooms, currentRoomId }) => {
     // Public rooms - everyone can join
     if (!room.isPrivate) return true;
 
-    // Private rooms - only owner can join
+    // Private rooms - only owner can join (or anyone if they know the password)
     const isOwner = room.owner?._id === user?._id || room.owner?.toString?.() === user?._id;
     return isOwner;
   };
 
   const handleRoomClick = (room) => {
     if (canJoinRoom(room)) {
-      navigate(`/chat/${room._id}`);
+      // If room is password protected, pass that flag to the join handler
+      if (onJoinRoom) {
+        onJoinRoom(room._id, room.passwordProtected);
+      } else {
+        navigate(`/chat/${room._id}`);
+      }
     }
   };
 
@@ -52,6 +57,9 @@ const RoomList = ({ rooms, currentRoomId }) => {
                   </p>
                   {room.isPrivate && (
                     <span className="text-lg" title="Private room">🔒</span>
+                  )}
+                  {room.passwordProtected && (
+                    <span className="text-lg" title="Password protected">🔐</span>
                   )}
                 </div>
                 <p className={`text-xs truncate opacity-75 ${isCurrentRoom ? 'text-blue-100' : 'text-gray-500'}`}>

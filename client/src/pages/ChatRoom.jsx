@@ -181,6 +181,33 @@ const ChatRoom = () => {
     }
   };
 
+  const handleJoinRoom = async (newRoomId, passwordProtected = false) => {
+    try {
+      let password = '';
+      // If room is password protected, ask for password
+      if (passwordProtected) {
+        password = prompt('🔐 This room is password protected.\nPlease enter the password:');
+        if (password === null) {
+          // User clicked cancel
+          return;
+        }
+      }
+
+      const response = await axios.post(
+        `${API_URL}/rooms/${newRoomId}/join`,
+        { password },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      navigate(`/chat/${newRoomId}`);
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Failed to join room';
+      console.error('Failed to join room', err);
+      alert(`❌ ${errorMsg}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-100">
@@ -230,7 +257,7 @@ const ChatRoom = () => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <RoomList rooms={rooms} currentRoomId={roomId} />
+          <RoomList rooms={rooms} currentRoomId={roomId} onJoinRoom={handleJoinRoom} />
         </div>
 
         {/* Online Users */}
