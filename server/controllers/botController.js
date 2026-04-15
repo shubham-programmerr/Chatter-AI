@@ -3,6 +3,7 @@ const Groq = require('groq-sdk');
 const { googleSearch, formatSearchResults } = require('../utils/googleSearch');
 const { getWeather, formatWeather } = require('../utils/weatherAPI');
 const { getConversationMemory, formatConversationContext, referencesContext } = require('../utils/botMemory');
+const { isTeachingBot, extractFact, saveLearningFact, getLearnedFacts, formatLearnedFacts } = require('../utils/botLearning');
 
 const client = new Groq({
   apiKey: process.env.GROQ_API_KEY
@@ -74,11 +75,26 @@ const handleBotMessage = async (req, res, io) => {
 
     console.log('🔑 API Key:', process.env.GROQ_API_KEY ? '✓ Loaded' : '✗ Missing');
 
+    // Check if user is teaching the bot
+    let isTeaching = false;
+    let learnedFact = null;
+    if (isTeachingBot(botPrompt)) {
+      console.log('📚 User is teaching the bot!');
+      isTeaching = true;
+      const fact = extractFact(botPrompt);
+      learnedFact = await saveLearningFact(roomId, fact, userId, 'custom', 3);
+    }
+
     // Load conversation memory
     console.log('💾 Loading conversation memory...');
     const conversationHistory = await getConversationMemory(roomId, 8);
     const conversationContext = formatConversationContext(conversationHistory);
     const hasContextReference = referencesContext(botPrompt);
+
+    // Load learned facts
+    console.log('📚 Loading learned facts...');
+    const learnedFacts = await getLearnedFacts(roomId, 5);
+    const learnedFactsContext = formatLearnedFacts(learnedFacts);
 
     let weatherInfo = '';
     let searchResults = [];
@@ -107,13 +123,15 @@ const handleBotMessage = async (req, res, io) => {
     }
 
     // Call Groq API
-    console.log('📞 Calling Groq API with memory context...');
+    console.log('📞 Calling Groq API with learning context...');
     const systemPrompt = `You are ChatterAI, a helpful AI assistant in a chat room. Keep responses concise and friendly. 
 Answer questions, help with coding, explain concepts, and engage in meaningful conversation.
 
 Remember this is a group chat, so be aware of conversation history and context.
 
 ${conversationContext}
+
+${learnedFactsContext}
 
 ${weatherInfo ? `The user asked about weather. Here is the current weather data:
 ${weatherInfo}
@@ -125,7 +143,9 @@ ${searchContext}
 
 Base your answer primarily on these search results.` : ''}
 
-${hasContextReference ? 'The user is referencing previous messages - use the conversation history above to provide context-aware responses.' : ''}`;
+${hasContextReference ? 'The user is referencing previous messages - use the conversation history above to provide context-aware responses.' : ''}
+
+${isTeaching ? 'The user is teaching you something. Acknowledge what you learned and thank them for the information.' : ''}`;
 
     const response = await client.chat.completions.create({
       model: 'llama-3.3-70b-versatile',

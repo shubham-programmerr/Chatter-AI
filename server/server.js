@@ -51,6 +51,9 @@ app.use('/api/admin', require('./routes/admin'));
 // Profile Routes
 app.use('/api/profile', require('./routes/profile'));
 
+// Bot Learning Routes
+app.use('/api/bot-learning', require('./routes/botLearning'));
+
 // --- SOCKET.IO CONNECTION ---
 const socketHandler = require('./socket/socketHandler');
 socketHandler(io);
