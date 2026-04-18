@@ -42,6 +42,9 @@ app.use('/api/rooms', require('./routes/rooms'));
 // Message Routes
 app.use('/api/messages', require('./routes/messages'));
 
+// Reactions Routes
+app.use('/api/messages', require('./routes/reactions'));
+
 // Bot Routes
 app.use('/api/bot', require('./routes/bot'));
 

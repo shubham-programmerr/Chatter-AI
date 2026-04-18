@@ -109,6 +109,42 @@ const socketHandler = (io) => {
       console.log(`User ${userId} left room ${roomId}`);
     });
 
+    // Add reaction to message
+    socket.on('reactToMessage', async (data) => {
+      try {
+        const { roomId, messageId, emoji, userId } = data;
+
+        const message = await Message.findById(messageId);
+        if (!message) return;
+
+        let reactionIndex = message.reactions.findIndex(r => r.emoji === emoji);
+
+        if (reactionIndex === -1) {
+          message.reactions.push({ emoji, users: [userId] });
+        } else {
+          if (!message.reactions[reactionIndex].users.includes(userId)) {
+            message.reactions[reactionIndex].users.push(userId);
+          } else {
+            message.reactions[reactionIndex].users = message.reactions[reactionIndex].users.filter(
+              id => id.toString() !== userId.toString()
+            );
+            if (message.reactions[reactionIndex].users.length === 0) {
+              message.reactions.splice(reactionIndex, 1);
+            }
+          }
+        }
+
+        await message.save();
+        await message.populate('reactions.users', 'username avatar');
+        await message.populate('sender', 'username avatar profilePicture');
+
+        // Broadcast reaction to all users in room
+        io.to(roomId).emit('messageReactionUpdated', message);
+      } catch (error) {
+        console.error('❌ Reaction error:', error);
+      }
+    });
+
     // Disconnect
     socket.on('disconnect', async () => {
       console.log(`❌ User disconnected: ${socket.id}`);

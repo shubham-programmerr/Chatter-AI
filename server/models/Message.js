@@ -22,7 +22,17 @@ const messageSchema = new mongoose.Schema({
   fileUrl: {
     type: String,
     default: '' // For Week 3 Cloudinary integration
-  }
+  },
+  reactions: [{
+    emoji: {
+      type: String,
+      required: true
+    },
+    users: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }]
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Message', messageSchema);

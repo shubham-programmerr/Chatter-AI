@@ -95,6 +95,15 @@ const useSocket = () => {
     return () => socketRef.current?.off('roomUsersUpdated', callback);
   }, []);
 
+  const reactToMessage = useCallback((roomId, messageId, emoji, userId) => {
+    socketRef.current?.emit('reactToMessage', { roomId, messageId, emoji, userId });
+  }, []);
+
+  const onMessageReactionUpdated = useCallback((callback) => {
+    socketRef.current?.on('messageReactionUpdated', callback);
+    return () => socketRef.current?.off('messageReactionUpdated', callback);
+  }, []);
+
   return {
     socket,
     isConnected,
@@ -103,12 +112,14 @@ const useSocket = () => {
     startTyping,
     stopTyping,
     leaveRoom,
+    reactToMessage,
     onMessageReceived,
     onUserTyping,
     onUserStoppedTyping,
     onUserJoined,
     onUserLeft,
-    onRoomUsersUpdated
+    onRoomUsersUpdated,
+    onMessageReactionUpdated
   };
 };
 

@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-const MessageBubble = ({ message, isCurrentUser, isBot }) => {
+const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  
   const formatTime = (date) => {
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+
+  const reactionEmojis = ['👍', '❤️', '😂', '😮', '😢', '🔥', '👏', '🎉'];
 
   // Get user display picture or fallback to initial
   const getUserDP = () => {
@@ -13,21 +17,70 @@ const MessageBubble = ({ message, isCurrentUser, isBot }) => {
     return null;
   };
 
+  const handleReaction = (emoji) => {
+    onReact(message._id, emoji);
+    setShowReactionPicker(false);
+  };
+
   if (isBot) {
     return (
-      <div className="flex justify-start mb-4 animate-fadeIn">
+      <div className="flex justify-start mb-4 animate-fadeIn group">
         <div className="flex gap-3 max-w-xs lg:max-w-md xl:max-w-lg">
           <div className="flex-shrink-0">
             <div className="flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 text-white text-lg font-bold shadow-md">
               🤖
             </div>
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col w-full">
             <p className="text-xs font-bold text-purple-600 mb-1.5">ChatterAI Bot</p>
             <div className="bg-gradient-to-br from-purple-50 to-violet-50 text-gray-900 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm border border-purple-100">
               <p className="break-words whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
             </div>
             <p className="text-xs text-gray-400 mt-2">{formatTime(message.createdAt)}</p>
+            
+            {/* Reactions Section */}
+            <div className="flex items-center gap-1 mt-2 flex-wrap">
+              {message.reactions && message.reactions.length > 0 && (
+                <div className="flex gap-1 flex-wrap">
+                  {message.reactions.map((reaction, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleReaction(reaction.emoji)}
+                      className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition text-xs border border-gray-200 hover:border-gray-300"
+                      title={reaction.users.map(u => u.username).join(', ')}
+                    >
+                      <span>{reaction.emoji}</span>
+                      <span className="text-gray-600 font-medium">{reaction.users.length}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              {/* Reaction Picker */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowReactionPicker(!showReactionPicker)}
+                  className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-gray-200"
+                  title="Add reaction"
+                >
+                  😊
+                </button>
+                
+                {showReactionPicker && (
+                  <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-300 rounded-lg p-2 shadow-lg flex gap-1 z-50">
+                    {reactionEmojis.map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => handleReaction(emoji)}
+                        className="text-xl hover:scale-125 transition"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -35,7 +88,7 @@ const MessageBubble = ({ message, isCurrentUser, isBot }) => {
   }
 
   return (
-    <div className={`flex mb-4 animate-fadeIn ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex mb-4 animate-fadeIn group ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex gap-3 max-w-xs lg:max-w-md xl:max-w-lg ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
         <div className="flex-shrink-0">
           {getUserDP() ? (
@@ -57,7 +110,7 @@ const MessageBubble = ({ message, isCurrentUser, isBot }) => {
             </div>
           )}
         </div>
-        <div className={isCurrentUser ? '' : 'flex-1'}>
+        <div className={`flex flex-col ${isCurrentUser ? '' : 'flex-1'}`}>
           {!isCurrentUser && (
             <p className="text-xs font-bold text-gray-700 mb-1.5">
               {message.sender?.username || 'Unknown User'}
@@ -73,6 +126,50 @@ const MessageBubble = ({ message, isCurrentUser, isBot }) => {
             <p className="break-words whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
           </div>
           <p className="text-xs text-gray-400 mt-2">{formatTime(message.createdAt)}</p>
+          
+          {/* Reactions Section */}
+          <div className="flex items-center gap-1 mt-2 flex-wrap">
+            {message.reactions && message.reactions.length > 0 && (
+              <div className="flex gap-1 flex-wrap">
+                {message.reactions.map((reaction, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleReaction(reaction.emoji)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition text-xs border border-gray-200 hover:border-gray-300"
+                    title={reaction.users.map(u => u.username).join(', ')}
+                  >
+                    <span>{reaction.emoji}</span>
+                    <span className="text-gray-600 font-medium">{reaction.users.length}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            {/* Reaction Picker */}
+            <div className="relative">
+              <button
+                onClick={() => setShowReactionPicker(!showReactionPicker)}
+                className="opacity-0 group-hover:opacity-100 transition p-1 rounded hover:bg-gray-200"
+                title="Add reaction"
+              >
+                😊
+              </button>
+              
+              {showReactionPicker && (
+                <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-300 rounded-lg p-2 shadow-lg flex gap-1 z-50">
+                  {reactionEmojis.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => handleReaction(emoji)}
+                      className="text-xl hover:scale-125 transition"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

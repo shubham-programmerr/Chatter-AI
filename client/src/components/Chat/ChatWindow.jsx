@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import TypingIndicator from './TypingIndicator';
 
-const ChatWindow = ({ messages, typing, currentUser, onSendMessage }) => {
+const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) => {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
 
@@ -41,6 +41,7 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage }) => {
                 message={msg}
                 isCurrentUser={msg.sender?._id === currentUser?._id}
                 isBot={msg.isBot}
+                onReact={onReact}
               />
             ))}
           </>

@@ -13,7 +13,7 @@ const ChatRoom = () => {
   const { roomId } = useParams();
   const { user, token } = useAuth();
   const navigate = useNavigate();
-  const { joinRoom, sendMessage, startTyping, stopTyping, leaveRoom, onMessageReceived, onUserTyping, onUserJoined, onUserLeft, onRoomUsersUpdated, isConnected } = useSocket();
+  const { joinRoom, sendMessage, startTyping, stopTyping, leaveRoom, reactToMessage, onMessageReceived, onUserTyping, onUserJoined, onUserLeft, onRoomUsersUpdated, onMessageReactionUpdated, isConnected } = useSocket();
 
   const [room, setRoom] = useState(null);
   const [rooms, setRooms] = useState([]);
@@ -127,6 +127,25 @@ const ChatRoom = () => {
 
     return unsubscribe;
   }, [onRoomUsersUpdated]);
+
+  // Listen for message reactions
+  useEffect(() => {
+    const unsubscribe = onMessageReactionUpdated((updatedMessage) => {
+      console.log('😊 Message reaction updated:', updatedMessage);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        )
+      );
+    });
+
+    return unsubscribe;
+  }, [onMessageReactionUpdated]);
+
+  const handleReact = (messageId, emoji) => {
+    if (!roomId || !user?._id) return;
+    reactToMessage(roomId, messageId, emoji, user._id);
+  };
 
   const handleSendMessage = (content) => {
     if (!content.trim() || !roomId || !user?._id) return;
@@ -314,6 +333,7 @@ const ChatRoom = () => {
           typing={typing}
           currentUser={user}
           onSendMessage={handleSendMessage}
+          onReact={handleReact}
         />
       </div>
     </div>

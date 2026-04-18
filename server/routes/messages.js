@@ -8,6 +8,7 @@ router.get('/room/:roomId', async (req, res) => {
   try {
     const messages = await Message.find({ room: req.params.roomId })
       .populate('sender', 'username avatar profilePicture')
+      .populate('reactions.users', 'username avatar')
       .sort({ createdAt: 1 });
     res.json(messages);
   } catch (error) {
@@ -28,6 +29,7 @@ router.post('/', authMiddleware, async (req, res) => {
     });
 
     await message.populate('sender', 'username avatar profilePicture');
+    await message.populate('reactions.users', 'username avatar');
     res.status(201).json(message);
   } catch (error) {
     res.status(500).json({ error: 'Failed to send message' });
