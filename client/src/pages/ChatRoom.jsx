@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import useSocket from '../hooks/useSocket';
 import ChatWindow from '../components/Chat/ChatWindow';
+import RoomSettings from '../components/Chat/RoomSettings';
 import RoomList from '../components/Sidebar/RoomList';
 import OnlineUsers from '../components/Sidebar/OnlineUsers';
 import axios from 'axios';
@@ -21,6 +22,7 @@ const ChatRoom = () => {
   const [typing, setTyping] = useState([]);
   const [loading, setLoading] = useState(true);
   const [togglingPrivacy, setTogglingPrivacy] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Fetch room details and messages
   useEffect(() => {
@@ -200,6 +202,26 @@ const ChatRoom = () => {
     }
   };
 
+  const handleRoomSettingsUpdate = (updatedRoom) => {
+    setRoom(updatedRoom);
+    // Refresh rooms list
+    const updatedRooms = rooms.map(r => r._id === updatedRoom._id ? updatedRoom : r);
+    setRooms(updatedRooms);
+  };
+
+  const handleOpenSettings = async () => {
+    // Fetch latest room data to get the password
+    try {
+      const response = await axios.get(`${API_URL}/rooms/${roomId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRoom(response.data);
+    } catch (error) {
+      console.error('Failed to fetch room details:', error);
+    }
+    setShowSettings(true);
+  };
+
   const handleJoinRoom = async (newRoomId, passwordProtected = false) => {
     try {
       let password = '';
@@ -308,15 +330,25 @@ const ChatRoom = () => {
             </div>
             <div className="flex items-center gap-4">
               {(room.owner?._id === user?._id || room.owner?.toString?.() === user?._id) && (
-                <button
-                  onClick={handleTogglePrivacy}
-                  disabled={togglingPrivacy}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300 hover:border-purple-400 transition disabled:opacity-50 font-medium text-purple-700"
-                  title="Toggle room privacy"
-                >
-                  <span>{room.isPrivate ? '🔒' : '🌐'}</span>
-                  <span>{room.isPrivate ? 'Private' : 'Public'}</span>
-                </button>
+                <>
+                  <button
+                    onClick={handleTogglePrivacy}
+                    disabled={togglingPrivacy}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300 hover:border-purple-400 transition disabled:opacity-50 font-medium text-purple-700"
+                    title="Toggle room privacy"
+                  >
+                    <span>{room.isPrivate ? '🔒' : '🌐'}</span>
+                    <span>{room.isPrivate ? 'Private' : 'Public'}</span>
+                  </button>
+                  <button
+                    onClick={handleOpenSettings}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 border border-blue-300 hover:border-blue-400 transition font-medium text-blue-700"
+                    title="Room settings"
+                  >
+                    <span>⚙️</span>
+                    <span>Settings</span>
+                  </button>
+                </>
               )}
               <div className="text-right">
                 <p className="text-sm text-gray-600">
@@ -336,6 +368,17 @@ const ChatRoom = () => {
           onReact={handleReact}
         />
       </div>
+
+      {/* Room Settings Modal */}
+      {showSettings && (
+        <RoomSettings
+          room={room}
+          token={token}
+          onUpdate={handleRoomSettingsUpdate}
+          onClose={() => setShowSettings(false)}
+          navigate={navigate}
+        />
+      )}
     </div>
   );
 };

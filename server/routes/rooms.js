@@ -23,6 +23,29 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get a specific room (with password for owner)
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.id)
+      .populate('users', 'username avatar isOnline')
+      .populate('owner', 'username');
+
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    const roomData = room.toObject();
+    
+    // Include password only for room owner
+    if (room.owner._id.toString() !== req.userId) {
+      delete roomData.password;
+    }
+
+    res.json(roomData);
+  } catch (error) {
+    console.error('❌ Fetch room error:', error);
+    res.status(500).json({ error: 'Failed to fetch room' });
+  }
+});
+
 // Create a new room
 router.post('/', authMiddleware, async (req, res) => {
   try {
@@ -55,9 +78,13 @@ router.post('/', authMiddleware, async (req, res) => {
 
     console.log('✅ Room created:', { roomId: room._id, isPrivate: room.isPrivate, passwordProtected });
     
-    // Send response without password
+    // Send response - include password for room owner
     const roomData = room.toObject();
-    delete roomData.password;
+    if (password && room.owner._id.toString() === req.userId) {
+      roomData.password = password; // Send plain text password to owner only
+    } else {
+      delete roomData.password;
+    }
     res.status(201).json(roomData);
   } catch (error) {
     console.error('❌ Create room error:', error.message);
@@ -121,9 +148,14 @@ router.post('/:id/join', authMiddleware, async (req, res) => {
     await room.populate('owner', 'username');
     console.log('✅ Room returned');
     
-    // Send response without password
+    // Send response - include password for room owner
     const roomData = room.toObject();
-    delete roomData.password;
+    if (room.owner._id.toString() === req.userId && room.password) {
+      // Don't send hashed password, owner won't need it for join
+      delete roomData.password;
+    } else {
+      delete roomData.password;
+    }
     res.json(roomData);
   } catch (error) {
     console.error('❌ Join room error:', error);
@@ -149,15 +181,22 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (name !== undefined) room.name = name;
 
     // Handle password changes
+    let plainTextPassword = null;
     if (removePassword) {
       room.password = null;
       room.passwordProtected = false;
       console.log('🔓 Password removed from room');
+    } else if (isPrivate === false) {
+      // If making room public, clear password
+      room.password = null;
+      room.passwordProtected = false;
+      console.log('🔓 Password removed - room is now public');
     } else if (password && isPrivate) {
       // Hash and set new password for private rooms
       const hashedPassword = await hashRoomPassword(password);
       room.password = hashedPassword;
       room.passwordProtected = true;
+      plainTextPassword = password; // Store plain text to return to owner
       console.log('🔐 Password set for private room');
     }
 
@@ -166,13 +205,43 @@ router.put('/:id', authMiddleware, async (req, res) => {
     await room.populate('users', 'username avatar isOnline');
     await room.populate('owner', 'username');
 
-    // Send response without password
+    // Send response - include plain text password for room owner
     const roomData = room.toObject();
-    delete roomData.password;
+    if (plainTextPassword) {
+      roomData.password = plainTextPassword; // Send plain text password to owner only
+    } else {
+      delete roomData.password;
+    }
     res.json(roomData);
   } catch (error) {
     console.error('❌ Update room error:', error);
     res.status(500).json({ error: 'Failed to update room' });
+  }
+});
+
+// Delete room
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    // Only owner can delete room
+    if (room.owner.toString() !== req.userId) {
+      return res.status(403).json({ error: 'Only room owner can delete room' });
+    }
+
+    // Delete all messages in this room
+    const Message = require('../models/Message');
+    await Message.deleteMany({ room: req.params.id });
+
+    // Delete the room
+    await Room.findByIdAndDelete(req.params.id);
+
+    console.log('🗑️ Room deleted:', { roomId: req.params.id, ownerId: req.userId });
+    res.json({ message: 'Room deleted successfully' });
+  } catch (error) {
+    console.error('❌ Delete room error:', error);
+    res.status(500).json({ error: 'Failed to delete room' });
   }
 });
 

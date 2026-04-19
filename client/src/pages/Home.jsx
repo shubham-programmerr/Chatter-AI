@@ -93,6 +93,28 @@ const Home = () => {
       );
       navigate(`/chat/${roomId}`);
     } catch (err) {
+      // If error suggests room settings changed, refresh rooms list
+      if (err.response?.status === 404 || err.response?.status === 403) {
+        await fetchRooms();
+        
+        // Try again without password if it was a public room
+        if (passwordProtected) {
+          try {
+            const response = await axios.post(
+              `${API_URL}/rooms/${roomId}/join`,
+              { password: '' },
+              {
+                headers: { Authorization: `Bearer ${token}` }
+              }
+            );
+            navigate(`/chat/${roomId}`);
+            return;
+          } catch (retryErr) {
+            // Still failed, show error
+          }
+        }
+      }
+      
       const errorMsg = err.response?.data?.error || 'Failed to join room';
       setError(errorMsg);
       console.error('Failed to join room', err);
