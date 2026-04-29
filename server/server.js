@@ -24,7 +24,8 @@ app.use(express.json());
 const allowedOrigins = [
   'http://localhost:3000',
   'http://192.168.55.1:3000',
-  'https://chatbot-ai-client.onrender.com',  // Production frontend URL
+  'https://chatbot-ai-client.onrender.com',
+  'https://chatter-ai-kozu.onrender.com',  // Your actual frontend URL
   /^http:\/\/192\.168\.\d+\.\d+:3000$/
 ];
 
@@ -36,6 +37,7 @@ app.use(cors({
     if (allowedOrigins.some(o => o instanceof RegExp ? o.test(origin) : o === origin)) {
       callback(null, true);
     } else {
+      console.log('❌ CORS rejected origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
