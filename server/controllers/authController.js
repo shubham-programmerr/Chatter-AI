@@ -57,6 +57,10 @@ const login = async (req, res) => {
     }
 
     // 2. Check if password matches
+    if (!user.password) {
+      return res.status(400).json({ message: 'This account uses Google Sign-In. Please login with Google.' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
