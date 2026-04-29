@@ -4,6 +4,21 @@ const dotenv = require('dotenv');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+const allowedOrigins = [
+  'https://chatbot-ai-client.onrender.com',  // Your frontend URL
+  'localhost:3000'
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
+  credentials: true
+}));
 
 // Load env variables
 dotenv.config();
