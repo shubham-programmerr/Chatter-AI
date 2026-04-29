@@ -4,21 +4,6 @@ const dotenv = require('dotenv');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const allowedOrigins = [
-  'https://chatbot-ai-client.onrender.com',  // Your frontend URL
-  'localhost:3000'
-];
-
-app.use(cors({
-  origin: function(origin, callback) {
-    if (allowedOrigins.includes(origin) || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS not allowed'));
-    }
-  },
-  credentials: true
-}));
 
 // Load env variables
 dotenv.config();
@@ -35,8 +20,25 @@ const io = socketIo(server, {
 
 // Middleware
 app.use(express.json());
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://192.168.55.1:3000',
+  'https://chatbot-ai-client.onrender.com',  // Production frontend URL
+  /^http:\/\/192\.168\.\d+\.\d+:3000$/
+];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://192.168.55.1:3000', /^http:\/\/192\.168\.\d+\.\d+:3000$/],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or server-to-server requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.some(o => o instanceof RegExp ? o.test(origin) : o === origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
