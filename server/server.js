@@ -86,17 +86,22 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGO_URI);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
 
-    // Drop the old unique googleId index if it exists (to fix duplicate key errors)
-    const db = mongoose.connection.db;
+    // Fix: Drop the old unique googleId index if it exists
+    const userModel = require('./models/User');
+    const collection = userModel.collection;
+    
     try {
-      const indexes = await db.collection('users').getIndexes();
-      if (indexes.googleId_1) {
-        await db.collection('users').dropIndex('googleId_1');
-        console.log('✅ Dropped old googleId index');
+      // List all indexes
+      const indexes = await collection.getIndexes();
+      console.log('📋 Current indexes:', Object.keys(indexes));
+      
+      // Drop googleId_1 if it exists with unique constraint
+      if (indexes['googleId_1']) {
+        await collection.dropIndex('googleId_1');
+        console.log('✅ Dropped old googleId_1 index');
       }
     } catch (err) {
-      // Index doesn't exist, that's fine
-      console.log('ℹ️ No old googleId index to drop');
+      console.log('ℹ️ Index operation note:', err.message);
     }
   } catch (error) {
     console.error(`❌ Error: ${error.message}`);
