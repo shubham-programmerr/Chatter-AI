@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+const compression = require('compression');
 
 // Load env variables
 dotenv.config();
@@ -27,6 +28,7 @@ const io = socketIo(server, {
 
 // Middleware
 app.use(express.json());
+app.use(compression()); // Compress responses for faster transfer
 
 const allowedOrigins = [
   'http://localhost:3000',

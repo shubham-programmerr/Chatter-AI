@@ -3,14 +3,21 @@ const router = express.Router();
 const Message = require('../models/Message');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Get all messages in a room
+// Get messages in a room with pagination
 router.get('/room/:roomId', async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
     const messages = await Message.find({ room: req.params.roomId })
       .populate('sender', 'username avatar profilePicture')
-      .populate('reactions.users', 'username avatar')
-      .sort({ createdAt: 1 });
-    res.json(messages);
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(); // Use lean() for read-only queries (faster)
+
+    res.json(messages.reverse()); // Reverse to show oldest first
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch messages' });
   }

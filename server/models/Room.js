@@ -36,4 +36,9 @@ const roomSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// Add indexes for faster queries
+roomSchema.index({ owner: 1 });
+roomSchema.index({ users: 1 });
+roomSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Room', roomSchema);
