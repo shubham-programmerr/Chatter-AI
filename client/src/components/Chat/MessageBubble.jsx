@@ -174,7 +174,6 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
       </div>
     </div>
   );
-  );
 };
 
 export default MessageBubble;
