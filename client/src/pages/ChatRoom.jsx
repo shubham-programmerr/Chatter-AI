@@ -285,34 +285,36 @@ const ChatRoom = () => {
   return (
     <div className="h-screen flex bg-gray-100">
       {/* Sidebar - Hidden on mobile, visible on desktop */}
-      <div className={`fixed md:relative md:w-72 w-72 h-screen bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed md:relative md:w-72 w-72 h-screen md:h-auto bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
-        <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className="p-4 md:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="text-2xl">💬</div>
+              <div className="text-xl md:text-2xl">💬</div>
               <div>
-                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ChatterAI</h2>
+                <h2 className="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ChatterAI</h2>
                 <p className="text-xs text-gray-500">Real-time Chat</p>
               </div>
             </div>
             {/* Close button on mobile */}
             <button
               onClick={() => setSidebarOpen(false)}
-              className="md:hidden text-gray-500 hover:text-gray-700"
+              className="md:hidden text-gray-500 hover:text-gray-700 text-xl"
             >
               ✕
             </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto min-h-0 md:overflow-visible">
           <RoomList rooms={rooms} currentRoomId={roomId} onJoinRoom={handleJoinRoom} />
         </div>
 
         {/* Online Users */}
-        <OnlineUsers users={room.users || []} />
+        <div className="border-t border-gray-200 flex-shrink-0">
+          <OnlineUsers users={room.users || []} />
+        </div>
       </div>
 
       {/* Overlay on mobile when sidebar is open */}
