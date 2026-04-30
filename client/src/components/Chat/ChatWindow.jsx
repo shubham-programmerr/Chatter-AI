@@ -25,12 +25,12 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) =
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-white">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-2">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-5xl mb-3">💬</div>
-              <p className="text-gray-400 text-lg">No messages yet. Start the conversation!</p>
+            <div className="text-center px-4">
+              <div className="text-4xl md:text-5xl mb-3">💬</div>
+              <p className="text-gray-400 text-base md:text-lg">No messages yet. Start the conversation!</p>
             </div>
           </div>
         ) : (
@@ -55,24 +55,24 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) =
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 p-6 bg-white shadow-lg">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="flex gap-3">
+      <div className="border-t border-gray-200 p-3 md:p-6 bg-white shadow-lg">
+        <form onSubmit={handleSubmit} className="space-y-2 md:space-y-3">
+          <div className="flex gap-2 md:gap-3">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message... (use @bot for AI assistance)"
-              className="flex-1 border border-gray-300 rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-gray-50 text-gray-800 text-sm"
+              placeholder="Type a message..."
+              className="flex-1 border border-gray-300 rounded-full px-4 md:px-5 py-2 md:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-gray-50 text-gray-800 text-sm"
             />
             <button
               type="submit"
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-full transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 md:px-8 py-2 md:py-3 rounded-full transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-sm md:text-base"
             >
               Send
             </button>
           </div>
-          <p className="text-xs text-gray-500 flex items-center gap-1 px-1">
+          <p className="text-xs text-gray-500 flex items-center gap-1 px-1 hidden md:flex">
             <span>💡</span> Tip: Type @bot followed by your question to get AI assistance!
           </p>
         </form>

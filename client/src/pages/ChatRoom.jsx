@@ -23,6 +23,7 @@ const ChatRoom = () => {
   const [loading, setLoading] = useState(true);
   const [togglingPrivacy, setTogglingPrivacy] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Fetch room details and messages
   useEffect(() => {
@@ -283,16 +284,25 @@ const ChatRoom = () => {
 
   return (
     <div className="h-screen flex bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-72 bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200">
+      {/* Sidebar - Hidden on mobile, visible on desktop */}
+      <div className={`fixed md:relative md:w-72 w-72 h-screen bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo */}
         <div className="p-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-          <div className="flex items-center gap-2">
-            <div className="text-2xl">💬</div>
-            <div>
-              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ChatterAI</h2>
-              <p className="text-xs text-gray-500">Real-time Chat</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="text-2xl">💬</div>
+              <div>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ChatterAI</h2>
+                <p className="text-xs text-gray-500">Real-time Chat</p>
+              </div>
             </div>
+            {/* Close button on mobile */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="md:hidden text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
           </div>
         </div>
 
@@ -305,48 +315,65 @@ const ChatRoom = () => {
         <OnlineUsers users={room.users || []} />
       </div>
 
+      {/* Overlay on mobile when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 md:hidden z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col w-full">
         {/* Header */}
-        <div className="bg-white shadow-sm px-8 py-5 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-800">
+        <div className="bg-white shadow-sm px-4 md:px-8 py-5 border-b border-gray-200">
+          <div className="flex items-center justify-between gap-4">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden text-gray-600 hover:text-gray-800"
+            >
+              ☰
+            </button>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800 truncate">
                   #{room.name}
                 </h1>
                 {room.isPrivate && (
                   <span className="text-lg" title="Private room">🔒</span>
                 )}
               </div>
-              <div className="flex items-center gap-4 mt-1">
-                <p className="text-gray-500 text-xs">
-                  👤 Owner: <span className="font-semibold text-gray-700">{room.owner?.username || 'Unknown'}</span>
+              <div className="flex items-center gap-4 mt-1 flex-wrap text-xs md:text-sm">
+                <p className="text-gray-500">
+                  👤 <span className="font-semibold text-gray-700 hidden md:inline">{room.owner?.username || 'Unknown'}</span>
                 </p>
               </div>
               {room.description && (
-                <p className="text-gray-500 text-sm mt-1">{room.description}</p>
+                <p className="text-gray-500 text-xs md:text-sm mt-1 line-clamp-2">{room.description}</p>
               )}
             </div>
-            <div className="flex items-center gap-4">
+
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
               {(room.owner?._id === user?._id || room.owner?.toString?.() === user?._id) && (
                 <>
                   <button
                     onClick={handleTogglePrivacy}
                     disabled={togglingPrivacy}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300 hover:border-purple-400 transition disabled:opacity-50 font-medium text-purple-700"
+                    className="hidden sm:flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300 hover:border-purple-400 transition disabled:opacity-50 font-medium text-purple-700 text-sm"
                     title="Toggle room privacy"
                   >
                     <span>{room.isPrivate ? '🔒' : '🌐'}</span>
-                    <span>{room.isPrivate ? 'Private' : 'Public'}</span>
+                    <span className="hidden md:inline">{room.isPrivate ? 'Private' : 'Public'}</span>
                   </button>
                   <button
                     onClick={handleOpenSettings}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 border border-blue-300 hover:border-blue-400 transition font-medium text-blue-700"
+                    className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 border border-blue-300 hover:border-blue-400 transition font-medium text-blue-700 text-sm"
                     title="Room settings"
                   >
                     <span>⚙️</span>
-                    <span>Settings</span>
+                    <span className="hidden md:inline">Settings</span>
                   </button>
                 </>
               )}
