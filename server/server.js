@@ -17,7 +17,8 @@ const io = socketIo(server, {
       'http://localhost:3000',
       'http://192.168.55.1:3000',
       'https://chatbot-ai-client.onrender.com',
-      'https://chatter-ai-kozu.onrender.com',  // Production frontend
+      'https://chatter-ai-kozu.onrender.com',
+      'https://chatter-ai-jps9.onrender.com',  // New production frontend URL
       /^http:\/\/192\.168\.\d+\.\d+:3000$/
     ],
     methods: ['GET', 'POST'],
@@ -34,7 +35,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://192.168.55.1:3000',
   'https://chatbot-ai-client.onrender.com',
-  'https://chatter-ai-kozu.onrender.com',  // Your actual frontend URL
+  'https://chatter-ai-kozu.onrender.com',
+  'https://chatter-ai-jps9.onrender.com',  // New production frontend URL
   /^http:\/\/192\.168\.\d+\.\d+:3000$/
 ];
 
