@@ -283,9 +283,9 @@ const ChatRoom = () => {
   }
 
   return (
-    <div className="h-screen flex bg-gray-100">
+    <div className={`h-screen flex bg-gray-100 ${sidebarOpen ? 'overflow-hidden' : ''}`}>
       {/* Sidebar - Hidden on mobile, visible on desktop */}
-      <div className={`fixed md:relative md:w-72 w-72 h-screen md:h-auto bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed md:relative md:w-72 w-72 h-screen md:h-auto bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`} style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Logo */}
         <div className="p-4 md:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -326,7 +326,7 @@ const ChatRoom = () => {
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col w-full">
+      <div className={`flex-1 flex flex-col w-full ${sidebarOpen ? 'overflow-hidden md:overflow-visible' : ''}`}>
         {/* Header */}
         <div className="bg-white shadow-sm px-4 md:px-8 py-5 border-b border-gray-200">
           <div className="flex items-center justify-between gap-4">
