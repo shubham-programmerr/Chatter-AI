@@ -7,7 +7,7 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'build')));
 
 // Handle SPA routing - serve index.html for all non-file routes
-app.get('*', (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
