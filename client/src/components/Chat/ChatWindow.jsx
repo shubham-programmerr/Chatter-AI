@@ -25,7 +25,7 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) =
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-white">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-2 min-h-0">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center px-4">
@@ -54,8 +54,8 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) =
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="border-t border-gray-200 p-3 md:p-6 bg-white shadow-lg">
+      {/* Input Area - Fixed at bottom */}
+      <div className="border-t border-gray-200 p-3 md:p-6 bg-white shadow-lg flex-shrink-0" style={{ WebkitOverflowScrolling: 'touch' }}>
         <form onSubmit={handleSubmit} className="space-y-2 md:space-y-3">
           <div className="flex gap-2 md:gap-3">
             <input
@@ -67,7 +67,7 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) =
             />
             <button
               type="submit"
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 md:px-8 py-2 md:py-3 rounded-full transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-sm md:text-base"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 md:px-8 py-2 md:py-3 rounded-full transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-sm md:text-base flex-shrink-0"
             >
               Send
             </button>
