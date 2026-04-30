@@ -7,16 +7,16 @@ const OnlineUsers = ({ users }) => {
     <div className="p-3 md:p-5 bg-gradient-to-b from-white to-gray-50">
       <div className="flex items-center gap-2 mb-3 md:mb-4">
         <div className="flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-green-400 animate-pulse"></div>
-        <h3 className="font-bold text-gray-800 text-xs md:text-sm">
+        <h3 className="font-bold text-gray-800 text-base md:text-sm">
           Online ({onlineUsers.length})
         </h3>
       </div>
       {onlineUsers.length === 0 ? (
-        <p className="text-gray-500 text-xs md:text-sm italic">No users online</p>
+        <p className="text-gray-500 text-base md:text-sm italic">No users online</p>
       ) : (
         <div className="space-y-2">
           {onlineUsers.map((user) => (
-            <div key={user._id} className="flex items-center gap-2 md:gap-3 text-xs md:text-sm group cursor-pointer">
+            <div key={user._id} className="flex items-center gap-2 md:gap-3 text-base md:text-sm group cursor-pointer">
               <div className="flex items-center justify-center w-6 h-6 md:w-7 md:h-7 rounded-full text-white text-xs font-bold shadow-sm transform group-hover:scale-110 transition flex-shrink-0"
                 style={{
                   backgroundImage: `linear-gradient(to bottom right, ${
