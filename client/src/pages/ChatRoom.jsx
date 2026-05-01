@@ -283,17 +283,17 @@ const ChatRoom = () => {
   }
 
   return (
-    <div className={`h-screen flex flex-col bg-gray-100 ${sidebarOpen ? 'overflow-hidden' : ''}`}>
-      {/* Sidebar - Hidden on mobile, visible on desktop */}
-      <div className={`fixed md:relative md:w-72 w-72 h-screen md:h-auto bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`} style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="h-screen flex bg-gray-100 overflow-hidden">
+      {/* Sidebar - Fixed on mobile, relative on desktop with proper flex layout */}
+      <div className={`fixed md:flex md:flex-col md:w-72 w-72 h-screen md:h-screen bg-white shadow-xl flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 z-40 ${sidebarOpen ? 'flex' : 'hidden md:flex'}`} style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Logo */}
-        <div className="p-3 md:p-5 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
+        <div className="p-2 md:p-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="text-xl md:text-2xl">💬</div>
+              <div className="text-lg md:text-xl">💬</div>
               <div>
-                <h2 className="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ChatterAI</h2>
-                <p className="text-xs text-gray-500">Real-time Chat</p>
+                <h2 className="text-base md:text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ChatterAI</h2>
+                <p className="text-xs text-gray-500 hidden md:block">Chat</p>
               </div>
             </div>
             {/* Close button on mobile */}
@@ -326,17 +326,12 @@ const ChatRoom = () => {
       )}
 
       {/* Main Chat Area */}
-      <div className={`flex-1 flex flex-col w-full md:flex-row`}>
-        {/* Desktop Sidebar Wrapper - Only visible on md and up */}
-        <div className="hidden md:flex md:flex-col">
-          {/* Will be replaced by sidebar on desktop */}
-        </div>
-
-        {/* Chat Container */}
-        <div className="flex-1 flex flex-col h-full">
-          {/* Header - Fixed on mobile, sticky on desktop */}
-          <div className="bg-white shadow-sm px-3 md:px-8 py-2 md:py-4 border-b border-gray-200 fixed md:relative w-full md:w-auto top-0 left-0 right-0 z-20 md:z-auto">
-          <div className="flex items-center justify-between gap-4">
+      <div className="flex-1 flex flex-col w-full min-h-0 overflow-hidden">
+        {/* Chat Container - Full height flex layout */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* Header - Fixed on mobile, relative on desktop */}
+          <div className="bg-white shadow-sm px-3 md:px-6 py-2 md:py-3 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center justify-between gap-3 md:gap-4">
             {/* Mobile menu button */}
             <button
               onClick={() => setSidebarOpen(true)}
@@ -346,48 +341,48 @@ const ChatRoom = () => {
             </button>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-lg md:text-2xl font-bold text-gray-800 truncate">
+              <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                <h1 className="text-lg md:text-xl font-bold text-gray-800 truncate">
                   #{room.name}
                 </h1>
                 {room.isPrivate && (
                   <span className="text-lg" title="Private room">🔒</span>
                 )}
               </div>
-              <div className="hidden md:flex items-center gap-4 mt-1 flex-wrap text-base md:text-sm">
+              <div className="hidden md:flex items-center gap-3 mt-1 flex-wrap text-xs md:text-sm">
                 <p className="text-gray-500">
                   👤 <span className="font-semibold text-gray-700">{room.owner?.username || 'Unknown'}</span>
                 </p>
               </div>
               {room.description && (
-                <p className="hidden md:block text-gray-500 text-sm mt-1 line-clamp-2">{room.description}</p>
+                <p className="hidden lg:block text-gray-500 text-xs md:text-sm mt-1 line-clamp-1">{room.description}</p>
               )}
             </div>
 
-            <div className="flex items-center gap-1 md:gap-4 flex-shrink-0">
+            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
               {(room.owner?._id === user?._id || room.owner?.toString?.() === user?._id) && (
                 <>
                   <button
                     onClick={handleTogglePrivacy}
                     disabled={togglingPrivacy}
-                    className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300 hover:border-purple-400 transition disabled:opacity-50 font-medium text-purple-700 text-xs md:text-sm"
+                    className="hidden lg:flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300 hover:border-purple-400 transition disabled:opacity-50 font-medium text-purple-700 text-xs"
                     title="Toggle room privacy"
                   >
                     <span>{room.isPrivate ? '🔒' : '🌐'}</span>
-                    <span className="hidden md:inline">{room.isPrivate ? 'Private' : 'Public'}</span>
+                    <span className="hidden lg:inline text-xs">{room.isPrivate ? 'Pvt' : 'Pub'}</span>
                   </button>
                   <button
                     onClick={handleOpenSettings}
-                    className="hidden md:flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 border border-blue-300 hover:border-blue-400 transition font-medium text-blue-700 text-xs md:text-sm"
+                    className="hidden md:flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 border border-blue-300 hover:border-blue-400 transition font-medium text-blue-700 text-xs"
                     title="Room settings"
                   >
                     <span>⚙️</span>
-                    <span className="hidden md:inline">Settings</span>
+                    <span className="hidden lg:inline text-xs">Set</span>
                   </button>
                 </>
               )}
-              <div className="text-right">
-                <p className="text-xs md:text-sm text-gray-600 font-semibold flex items-center gap-1">
+              <div className="text-right flex items-center gap-1 md:gap-2">
+                <p className="text-xs md:text-sm text-gray-600 font-semibold">
                   👥 <span>{room.users?.length || 0}</span>
                 </p>
               </div>
@@ -395,8 +390,8 @@ const ChatRoom = () => {
           </div>
         </div>
 
-          {/* Chat Window - Adjusted for fixed header on mobile */}
-          <div className="flex-1 overflow-hidden pt-16 md:pt-0">
+          {/* Chat Window - Scrollable messages and input */}
+          <div className="flex-1 overflow-hidden min-h-0">
             <ChatWindow
               messages={messages}
               typing={typing}

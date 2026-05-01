@@ -27,12 +27,12 @@ const RoomList = ({ rooms, currentRoomId, onJoinRoom }) => {
   };
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm md:text-sm font-bold text-gray-600 px-3 md:px-4 pt-3 md:pt-4 uppercase tracking-wider">Rooms</h3>
+    <div className="space-y-1 md:space-y-0.5">
+      <h3 className="text-xs md:text-xs font-bold text-gray-600 px-2 md:px-3 pt-2 md:pt-3 uppercase tracking-wider">Rooms</h3>
       {rooms.length === 0 ? (
-        <p className="text-gray-500 text-center py-4 text-base md:text-sm">No rooms available</p>
+        <p className="text-gray-500 text-center py-3 md:py-2 text-xs md:text-xs">No rooms</p>
       ) : (
-        <div className="space-y-1 px-2">
+        <div className="space-y-0.5 md:space-y-0 px-1 md:px-1.5">
           {rooms.map((room) => {
             const isCurrentRoom = currentRoomId === room._id;
             const canJoin = canJoinRoom(room);
@@ -42,7 +42,7 @@ const RoomList = ({ rooms, currentRoomId, onJoinRoom }) => {
                 key={room._id}
                 onClick={() => handleRoomClick(room)}
                 disabled={!canJoin}
-                className={`w-full text-left px-3 md:px-4 py-2 md:py-3 rounded-lg transition duration-200 text-base md:text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`w-full text-left px-2 md:px-2.5 py-1.5 md:py-1.5 rounded-md transition duration-200 text-xs md:text-xs disabled:opacity-50 disabled:cursor-not-allowed ${
                   isCurrentRoom
                     ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                     : canJoin
@@ -51,19 +51,23 @@ const RoomList = ({ rooms, currentRoomId, onJoinRoom }) => {
                 }`}
                 title={!canJoin ? 'Private room - Owner only' : ''}
               >
-                <div className="flex items-center gap-2">
-                  <p className={`font-semibold truncate flex-1 ${isCurrentRoom ? '' : 'group-hover:text-blue-600 transition'}`}>
+                <div className="flex items-center gap-1 md:gap-1.5">
+                  <p className={`font-semibold truncate flex-1 text-xs ${
+                    isCurrentRoom ? '' : 'group-hover:text-blue-600 transition'
+                  }`}>
                     #{room.name}
                   </p>
                   {room.isPrivate && (
-                    <span className="text-base md:text-lg flex-shrink-0" title="Private room">🔒</span>
+                    <span className="text-sm flex-shrink-0" title="Private room">🔒</span>
                   )}
                   {room.passwordProtected && (
-                    <span className="text-base md:text-lg flex-shrink-0" title="Password protected">🔐</span>
+                    <span className="text-sm flex-shrink-0" title="Password protected">🔐</span>
                   )}
                 </div>
-                <p className={`text-sm md:text-xs truncate opacity-75 ${isCurrentRoom ? 'text-blue-100' : 'text-gray-500'}`}>
-                  {room.description || 'No description'}
+                <p className={`text-xs truncate opacity-75 ${
+                  isCurrentRoom ? 'text-blue-100' : 'text-gray-500'
+                }`}>
+                  {room.description?.substring(0, 25) || 'No desc'}
                 </p>
               </button>
             );

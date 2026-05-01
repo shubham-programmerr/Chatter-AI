@@ -24,29 +24,29 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
 
   if (isBot) {
     return (
-      <div className="flex justify-start mb-4 animate-fadeIn group">
-        <div className="flex gap-2 md:gap-3 max-w-xs sm:max-w-sm lg:max-w-md xl:max-w-lg">
+      <div className="flex justify-start mb-2 md:mb-3 animate-fadeIn group">
+        <div className="flex gap-2 md:gap-2 max-w-xs sm:max-w-sm lg:max-w-md xl:max-w-lg">
           <div className="flex-shrink-0">
-            <div className="flex items-center justify-center h-8 w-8 md:h-9 md:w-9 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 text-white text-lg font-bold shadow-md">
+            <div className="flex items-center justify-center h-7 w-7 md:h-7 md:w-7 rounded-full bg-gradient-to-br from-violet-400 to-purple-600 text-white text-base md:text-base font-bold shadow-md">
               🤖
             </div>
           </div>
           <div className="flex flex-col w-full">
-            <p className="text-sm md:text-xs font-bold text-purple-600 mb-1.5">ChatterAI Bot</p>
-            <div className="bg-gradient-to-br from-purple-50 to-violet-50 text-gray-900 px-3 md:px-4 py-2 md:py-3 rounded-2xl rounded-tl-sm shadow-sm border border-purple-100">
-              <p className="break-words whitespace-pre-wrap text-base md:text-sm leading-relaxed">{message.content}</p>
+            <p className="text-xs md:text-xs font-bold text-purple-600 mb-1">ChatterAI</p>
+            <div className="bg-gradient-to-br from-purple-50 to-violet-50 text-gray-900 px-3 md:px-3 py-1.5 md:py-2 rounded-2xl rounded-tl-sm shadow-sm border border-purple-100">
+              <p className="break-words whitespace-pre-wrap text-sm md:text-sm leading-relaxed">{message.content}</p>
             </div>
-            <p className="text-sm md:text-xs text-gray-400 mt-2">{formatTime(message.createdAt)}</p>
+            <p className="text-xs md:text-xs text-gray-400 mt-1">{formatTime(message.createdAt)}</p>
             
             {/* Reactions Section */}
-            <div className="flex items-center gap-1 mt-2 flex-wrap">
+            <div className="flex items-center gap-0.5 mt-1 md:mt-1 flex-wrap">
               {message.reactions && message.reactions.length > 0 && (
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex gap-0.5 flex-wrap">
                   {message.reactions.map((reaction, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleReaction(reaction.emoji)}
-                      className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition text-xs border border-gray-200 hover:border-gray-300"
+                      className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gray-100 hover:bg-gray-200 transition text-xs border border-gray-200 hover:border-gray-300"
                       title={reaction.users.map(u => u.username).join(', ')}
                     >
                       <span>{reaction.emoji}</span>
@@ -67,12 +67,12 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
                 </button>
                 
                 {showReactionPicker && (
-                  <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-300 rounded-lg p-1 md:p-2 shadow-lg flex gap-1 z-50">
+                  <div className="absolute bottom-full mb-1 left-0 bg-white border border-gray-300 rounded-lg p-1 shadow-lg flex gap-0.5 z-50">
                     {reactionEmojis.map((emoji) => (
                       <button
                         key={emoji}
                         onClick={() => handleReaction(emoji)}
-                        className="text-lg md:text-xl hover:scale-125 transition"
+                        className="text-base md:text-lg hover:scale-125 transition"
                       >
                         {emoji}
                       </button>
@@ -88,17 +88,17 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
   }
 
   return (
-    <div className={`flex mb-4 animate-fadeIn group ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex gap-2 md:gap-3 max-w-xs sm:max-w-sm lg:max-w-md xl:max-w-lg ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex mb-2 md:mb-3 animate-fadeIn group ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`flex gap-2 md:gap-2 max-w-xs sm:max-w-sm lg:max-w-md xl:max-w-lg ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
         <div className="flex-shrink-0">
           {getUserDP() ? (
             <img
               src={getUserDP()}
               alt={message.sender?.username || 'User'}
-              className="h-8 w-8 md:h-9 md:w-9 rounded-full object-cover shadow-md border-2 border-white"
+              className="h-7 w-7 md:h-7 md:w-7 rounded-full object-cover shadow-md border-2 border-white"
             />
           ) : (
-            <div className="flex items-center justify-center h-8 w-8 md:h-9 md:w-9 rounded-full bg-gradient-to-br text-white text-xs font-bold shadow-md"
+            <div className="flex items-center justify-center h-7 w-7 md:h-7 md:w-7 rounded-full bg-gradient-to-br text-white text-xs font-bold shadow-md"
               style={{
                 backgroundImage: `linear-gradient(to bottom right, ${
                   ['from-blue-400 to-blue-600', 'from-green-400 to-green-600', 'from-pink-400 to-pink-600', 'from-orange-400 to-orange-600'][
@@ -112,30 +112,30 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
         </div>
         <div className={`flex flex-col ${isCurrentUser ? '' : 'flex-1'}`}>
           {!isCurrentUser && (
-            <p className="text-sm md:text-xs font-bold text-gray-700 mb-1.5">
-              {message.sender?.username || 'Unknown User'}
+            <p className="text-xs md:text-xs font-bold text-gray-700 mb-0.5">
+              {message.sender?.username || 'Unknown'}
             </p>
           )}
           <div
-            className={`px-3 md:px-4 py-2 md:py-3 rounded-2xl shadow-sm text-base md:text-sm ${
+            className={`px-3 md:px-3 py-1.5 md:py-2 rounded-2xl shadow-sm text-sm md:text-sm ${
               isCurrentUser
                 ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-none'
                 : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
             }`}
           >
-            <p className="break-words whitespace-pre-wrap leading-relaxed text-base md:text-sm">{message.content}</p>
+            <p className="break-words whitespace-pre-wrap leading-relaxed text-sm md:text-sm">{message.content}</p>
           </div>
-          <p className="text-xs text-gray-400 mt-2">{formatTime(message.createdAt)}</p>
+          <p className="text-xs text-gray-400 mt-1">{formatTime(message.createdAt)}</p>
           
           {/* Reactions Section */}
-          <div className="flex items-center gap-1 mt-2 flex-wrap">
+          <div className="flex items-center gap-0.5 mt-1 flex-wrap">
             {message.reactions && message.reactions.length > 0 && (
               <div className="flex gap-1 flex-wrap">
                 {message.reactions.map((reaction, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleReaction(reaction.emoji)}
-                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition text-xs border border-gray-200 hover:border-gray-300"
+                    className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gray-100 hover:bg-gray-200 transition text-xs border border-gray-200 hover:border-gray-300"
                     title={reaction.users.map(u => u.username).join(', ')}
                   >
                     <span>{reaction.emoji}</span>
@@ -156,12 +156,12 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
               </button>
               
               {showReactionPicker && (
-                <div className="absolute bottom-full mb-2 left-0 bg-white border border-gray-300 rounded-lg p-1 md:p-2 shadow-lg flex gap-1 z-50 flex-wrap max-w-xs">
+                  <div className="absolute bottom-full mb-1 left-0 bg-white border border-gray-300 rounded-lg p-1 shadow-lg flex gap-0.5 z-50 flex-wrap max-w-xs">
                   {reactionEmojis.map((emoji) => (
                     <button
                       key={emoji}
                       onClick={() => handleReaction(emoji)}
-                      className="text-lg md:text-xl hover:scale-125 transition"
+                      className="text-base md:text-lg hover:scale-125 transition"
                     >
                       {emoji}
                     </button>
