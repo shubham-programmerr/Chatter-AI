@@ -24,8 +24,8 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) =
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-gradient-to-b from-gray-50 to-white">
-      {/* Messages Area - Properly constrained height */}
-      <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 min-h-0 pb-20 md:pb-0">
+      {/* Messages Area - Scrollable */}
+      <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 min-h-0 pb-20 md:pb-4">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center px-4">
@@ -54,8 +54,8 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) =
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area - Fixed at bottom on mobile, relative on desktop */}
-      <div className="border-t border-gray-200 p-2 md:p-4 bg-white shadow-lg flex-shrink-0 fixed md:relative bottom-0 left-0 right-0 md:bottom-auto md:left-auto md:right-auto z-10 md:z-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {/* Input Area - Always visible at bottom */}
+      <div className="border-t border-gray-200 p-2 md:p-4 bg-white shadow-lg flex-shrink-0 z-50" style={{ WebkitOverflowScrolling: 'touch' }}>
         <form onSubmit={handleSubmit} className="space-y-1 md:space-y-2 max-w-7xl mx-auto">
           <div className="flex gap-2 md:gap-3">
             <input

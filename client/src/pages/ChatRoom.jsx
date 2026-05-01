@@ -23,7 +23,7 @@ const ChatRoom = () => {
   const [loading, setLoading] = useState(true);
   const [togglingPrivacy, setTogglingPrivacy] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Fetch room details and messages
   useEffect(() => {
@@ -285,7 +285,7 @@ const ChatRoom = () => {
   return (
     <div className="h-screen flex bg-gray-100 overflow-hidden">
       {/* Sidebar - Fixed overlay on mobile, flex part on desktop */}
-      <div className={`w-72 h-screen bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-40 md:z-auto`} style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className={`w-72 h-screen md:h-full bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-20 md:z-auto`} style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Logo */}
         <div className="p-2 md:p-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -320,17 +320,17 @@ const ChatRoom = () => {
       {/* Overlay on mobile when sidebar is open */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 md:hidden z-30"
+          className="fixed inset-0 bg-black/50 md:hidden z-10"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col w-full min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col w-full h-full min-h-0 overflow-hidden">
         {/* Chat Container - Full height flex layout */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          {/* Header - Fixed on mobile, relative on desktop */}
-          <div className="bg-white shadow-sm px-3 md:px-6 py-2 md:py-3 border-b border-gray-200 flex-shrink-0">
+        <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
+          {/* Header - Compact, not fixed on desktop */}
+          <div className="bg-white shadow-sm px-3 md:px-6 py-2 md:py-3 border-b border-gray-200 flex-shrink-0 sticky top-0 z-10">
           <div className="flex items-center justify-between gap-3 md:gap-4">
             {/* Mobile menu button */}
             <button
@@ -391,7 +391,7 @@ const ChatRoom = () => {
         </div>
 
           {/* Chat Window - Scrollable messages and input */}
-          <div className="flex-1 overflow-hidden min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
             <ChatWindow
               messages={messages}
               typing={typing}
