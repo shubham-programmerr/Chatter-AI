@@ -284,8 +284,8 @@ const ChatRoom = () => {
 
   return (
     <div className="h-screen flex bg-gray-100 overflow-hidden">
-      {/* Sidebar - Fixed on mobile, relative on desktop with proper flex layout */}
-      <div className={`fixed md:flex md:flex-col md:w-72 w-72 h-screen md:h-screen bg-white shadow-xl flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 z-40 ${sidebarOpen ? 'flex' : 'hidden md:flex'}`} style={{ WebkitOverflowScrolling: 'touch' }}>
+      {/* Sidebar - Fixed overlay on mobile, flex part on desktop */}
+      <div className={`w-72 h-screen bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-40 md:z-auto`} style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Logo */}
         <div className="p-2 md:p-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -307,7 +307,7 @@ const ChatRoom = () => {
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto min-h-0 md:overflow-visible">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <RoomList rooms={rooms} currentRoomId={roomId} onJoinRoom={handleJoinRoom} />
         </div>
 
