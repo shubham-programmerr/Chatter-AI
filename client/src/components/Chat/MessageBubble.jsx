@@ -32,9 +32,9 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
             </div>
           </div>
           <div className="flex flex-col w-full">
-            <p className="text-xs md:text-xs font-bold text-purple-600 mb-1">ChatterAI</p>
+            <p className="text-sm md:text-xs font-bold text-purple-600 mb-1">ChatterAI</p>
             <div className="bg-gradient-to-br from-purple-50 to-violet-50 text-gray-900 px-3 md:px-3 py-1.5 md:py-2 rounded-2xl rounded-tl-sm shadow-sm border border-purple-100">
-              <p className="break-words whitespace-pre-wrap text-sm md:text-sm leading-relaxed">{message.content}</p>
+              <p className="break-words whitespace-pre-wrap text-base md:text-sm leading-relaxed">{message.content}</p>
             </div>
             <p className="text-xs md:text-xs text-gray-400 mt-1">{formatTime(message.createdAt)}</p>
             
@@ -112,18 +112,18 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
         </div>
         <div className={`flex flex-col ${isCurrentUser ? '' : 'flex-1'}`}>
           {!isCurrentUser && (
-            <p className="text-xs md:text-xs font-bold text-gray-700 mb-0.5">
+            <p className="text-sm md:text-xs font-bold text-gray-700 mb-0.5">
               {message.sender?.username || 'Unknown'}
             </p>
           )}
           <div
-            className={`px-3 md:px-3 py-1.5 md:py-2 rounded-2xl shadow-sm text-sm md:text-sm ${
+            className={`px-3 md:px-3 py-2 md:py-2 rounded-2xl shadow-sm text-base md:text-sm ${
               isCurrentUser
                 ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-none'
                 : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
             }`}
           >
-            <p className="break-words whitespace-pre-wrap leading-relaxed text-sm md:text-sm">{message.content}</p>
+            <p className="break-words whitespace-pre-wrap leading-relaxed text-base md:text-sm">{message.content}</p>
           </div>
           <p className="text-xs text-gray-400 mt-1">{formatTime(message.createdAt)}</p>
           

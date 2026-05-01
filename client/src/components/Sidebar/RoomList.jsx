@@ -28,9 +28,9 @@ const RoomList = ({ rooms, currentRoomId, onJoinRoom }) => {
 
   return (
     <div className="space-y-1 md:space-y-0.5">
-      <h3 className="text-xs md:text-xs font-bold text-gray-600 px-2 md:px-3 pt-2 md:pt-3 uppercase tracking-wider">Rooms</h3>
+      <h3 className="text-sm md:text-xs font-bold text-gray-600 px-2 md:px-3 pt-2 md:pt-3 uppercase tracking-wider">Rooms</h3>
       {rooms.length === 0 ? (
-        <p className="text-gray-500 text-center py-3 md:py-2 text-xs md:text-xs">No rooms</p>
+        <p className="text-gray-500 text-center py-3 md:py-2 text-sm md:text-xs">No rooms</p>
       ) : (
         <div className="space-y-0.5 md:space-y-0 px-1 md:px-1.5">
           {rooms.map((room) => {
@@ -42,7 +42,7 @@ const RoomList = ({ rooms, currentRoomId, onJoinRoom }) => {
                 key={room._id}
                 onClick={() => handleRoomClick(room)}
                 disabled={!canJoin}
-                className={`w-full text-left px-2 md:px-2.5 py-1.5 md:py-1.5 rounded-md transition duration-200 text-xs md:text-xs disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`w-full text-left px-2 md:px-2.5 py-2 md:py-1.5 rounded-md transition duration-200 text-sm md:text-xs disabled:opacity-50 disabled:cursor-not-allowed ${
                   isCurrentRoom
                     ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
                     : canJoin
@@ -52,7 +52,7 @@ const RoomList = ({ rooms, currentRoomId, onJoinRoom }) => {
                 title={!canJoin ? 'Private room - Owner only' : ''}
               >
                 <div className="flex items-center gap-1 md:gap-1.5">
-                  <p className={`font-semibold truncate flex-1 text-xs ${
+                  <p className={`font-semibold truncate flex-1 text-sm ${
                     isCurrentRoom ? '' : 'group-hover:text-blue-600 transition'
                   }`}>
                     #{room.name}

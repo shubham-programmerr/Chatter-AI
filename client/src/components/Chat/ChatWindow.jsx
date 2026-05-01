@@ -30,7 +30,7 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) =
           <div className="h-full flex items-center justify-center">
             <div className="text-center px-4">
               <div className="text-4xl md:text-5xl mb-3">💬</div>
-              <p className="text-gray-400 text-sm md:text-base">No messages yet. Start the conversation!</p>
+              <p className="text-gray-400 text-base md:text-base">No messages yet. Start the conversation!</p>
             </div>
           </div>
         ) : (
@@ -63,16 +63,16 @@ const ChatWindow = ({ messages, typing, currentUser, onSendMessage, onReact }) =
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type a message..."
-              className="flex-1 border border-gray-300 rounded-full px-3 md:px-4 py-2 md:py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-gray-50 text-gray-800 text-sm"
+              className="flex-1 border border-gray-300 rounded-full px-3 md:px-4 py-2.5 md:py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-gray-50 text-gray-800 text-base md:text-sm"
             />
             <button
               type="submit"
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 md:px-6 py-2 md:py-2.5 rounded-full transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-sm md:text-sm flex-shrink-0"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 md:px-6 py-2.5 md:py-2.5 rounded-full transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-base md:text-sm flex-shrink-0"
             >
               Send
             </button>
           </div>
-          <p className="text-xs md:text-xs text-gray-500 flex items-center gap-1 px-1 hidden md:flex">
+          <p className="text-sm md:text-xs text-gray-500 flex items-center gap-1 px-1 hidden md:flex">
             <span>💡</span> <span className="hidden lg:inline">Tip: Type @bot to get AI assistance</span>
           </p>
         </form>

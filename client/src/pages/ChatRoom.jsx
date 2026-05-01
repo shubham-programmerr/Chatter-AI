@@ -342,14 +342,14 @@ const ChatRoom = () => {
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                <h1 className="text-lg md:text-xl font-bold text-gray-800 truncate">
+                <h1 className="text-xl md:text-xl font-bold text-gray-800 truncate">
                   #{room.name}
                 </h1>
                 {room.isPrivate && (
                   <span className="text-lg" title="Private room">🔒</span>
                 )}
               </div>
-              <div className="hidden md:flex items-center gap-3 mt-1 flex-wrap text-xs md:text-sm">
+              <div className="flex md:flex items-center gap-3 mt-1 flex-wrap text-sm md:text-sm">
                 <p className="text-gray-500">
                   👤 <span className="font-semibold text-gray-700">{room.owner?.username || 'Unknown'}</span>
                 </p>
