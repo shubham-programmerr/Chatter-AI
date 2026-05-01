@@ -27,7 +27,7 @@ const socketHandler = (io) => {
       console.log(`✅ Room updated with user, total users:`, room?.users?.length);
 
       // Notify others in the room with full user data
-      io.to(roomId).emit('userJoined', {
+      socket.to(roomId).emit('userJoined', {
         _id: user._id,
         userId: user._id,
         username: user.username,
@@ -36,7 +36,7 @@ const socketHandler = (io) => {
         message: 'User joined the room'
       });
 
-      // Emit updated users list to all in room
+      // Send updated users list to ALL users in room (including the joining user)
       io.to(roomId).emit('roomUsersUpdated', room?.users || []);
 
       console.log(`✅ User ${userId} joined room ${roomId} - event emitted`);
@@ -148,6 +148,38 @@ const socketHandler = (io) => {
     // Disconnect
     socket.on('disconnect', async () => {
       console.log(`❌ User disconnected: ${socket.id}`);
+      
+      try {
+        const userId = socket.data?.userId;
+        const roomId = socket.data?.roomId;
+
+        if (userId && roomId) {
+          // Mark user as offline
+          await User.findByIdAndUpdate(userId, { isOnline: false });
+          console.log(`✅ User ${userId} marked offline`);
+
+          // Remove user from room
+          const Room = require('../models/Room');
+          const room = await Room.findByIdAndUpdate(
+            roomId,
+            { $pull: { users: userId } },
+            { returnDocument: 'after' }
+          ).populate('users', 'username avatar isOnline');
+
+          // Notify room of user leaving
+          io.to(roomId).emit('userLeft', {
+            userId,
+            message: 'User disconnected'
+          });
+
+          // Emit updated users list
+          io.to(roomId).emit('roomUsersUpdated', room?.users || []);
+
+          console.log(`✅ User ${userId} removed from room ${roomId}`);
+        }
+      } catch (error) {
+        console.error('❌ Disconnect error:', error);
+      }
     });
   });
 };
