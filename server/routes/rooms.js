@@ -4,10 +4,21 @@ const Room = require('../models/Room');
 const authMiddleware = require('../middleware/authMiddleware');
 const { hashRoomPassword, verifyRoomPassword } = require('../utils/roomPassword');
 
-// Get all rooms
+// Get all rooms with pagination
 router.get('/', async (req, res) => {
   try {
-    const rooms = await Room.find().sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const skip = (page - 1) * limit;
+
+    // Get total count
+    const total = await Room.countDocuments();
+
+    // Get paginated rooms
+    const rooms = await Room.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     // Populate each room individually
     for (let room of rooms) {
@@ -15,8 +26,16 @@ router.get('/', async (req, res) => {
       await room.populate('owner', 'username');
     }
 
-    console.log('📋 Rooms fetched:', rooms.length, rooms.map(r => ({ name: r.name, isPrivate: r.isPrivate, ownerId: r.owner?._id, users: r.users.length })));
-    res.json(rooms);
+    console.log('📋 Rooms fetched:', rooms.length, 'Page:', page, 'Total:', total);
+    res.json({
+      rooms,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('❌ Fetch rooms error:', error);
     res.status(500).json({ error: 'Failed to fetch rooms' });

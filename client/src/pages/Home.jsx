@@ -15,6 +15,10 @@ const Home = () => {
   const [roomPassword, setRoomPassword] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRooms, setTotalRooms] = useState(0);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
 
   useEffect(() => {
     if (!loading && !token) {
@@ -26,12 +30,20 @@ const Home = () => {
     fetchRooms();
   }, []);
 
-  const fetchRooms = async () => {
+  const fetchRooms = async (page = 1) => {
+    setIsLoadingRooms(true);
     try {
-      const response = await axios.get(`${API_URL}/rooms`);
-      setRooms(response.data);
+      const response = await axios.get(`${API_URL}/rooms?page=${page}&limit=15`);
+      const { rooms: roomsData, pagination } = response.data;
+      setRooms(roomsData);
+      setCurrentPage(pagination.page);
+      setTotalPages(pagination.pages);
+      setTotalRooms(pagination.total);
     } catch (err) {
       console.error('Failed to fetch rooms', err);
+      setError('Failed to load rooms');
+    } finally {
+      setIsLoadingRooms(false);
     }
   };
 
@@ -56,11 +68,13 @@ const Home = () => {
       );
 
       console.log('✅ Room created:', response.data);
-      setRooms([response.data, ...rooms]);
       setRoomName('');
       setRoomDescription('');
       setIsPrivate(false);
       setRoomPassword('');
+      // Reload first page to show new room
+      setCurrentPage(1);
+      await fetchRooms(1);
     } catch (err) {
       const errorMsg = err.response?.data?.error || err.message || 'Failed to create room';
       console.error('❌ Create room error:', errorMsg, err);
@@ -367,6 +381,52 @@ const Home = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="mt-6 md:mt-8 flex items-center justify-center gap-2 md:gap-4">
+                  <button
+                    onClick={() => fetchRooms(currentPage - 1)}
+                    disabled={currentPage === 1 || isLoadingRooms}
+                    className="bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 px-3 md:px-4 py-2 rounded-lg transition font-medium text-xs md:text-sm"
+                  >
+                    ← Previous
+                  </button>
+
+                  <div className="flex items-center gap-1 md:gap-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => fetchRooms(page)}
+                        disabled={isLoadingRooms}
+                        className={`px-2 md:px-3 py-1.5 md:py-2 rounded-lg transition font-medium text-xs md:text-sm ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                        } disabled:opacity-50`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => fetchRooms(currentPage + 1)}
+                    disabled={currentPage === totalPages || isLoadingRooms}
+                    className="bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 px-3 md:px-4 py-2 rounded-lg transition font-medium text-xs md:text-sm"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+
+              {/* Room Count Info */}
+              <div className="mt-4 text-center">
+                <p className="text-xs md:text-sm text-gray-600">
+                  Showing <span className="font-bold text-blue-600">{rooms.length}</span> of <span className="font-bold text-blue-600">{totalRooms}</span> rooms
+                  {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
+                </p>
               </div>
             )}
           </div>
