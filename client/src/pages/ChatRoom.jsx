@@ -251,7 +251,7 @@ const ChatRoom = () => {
   return (
     <div className="h-screen flex bg-gray-100 overflow-hidden">
       {/* Sidebar - Fixed overlay on mobile, flex part on desktop */}
-      <div className={`w-72 flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative h-screen md:h-full z-20 md:z-auto bg-white shadow-xl`} style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className={`w-72 flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative h-screen md:h-full z-20 md:z-auto bg-white shadow-xl pb-20 md:pb-0`} style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Logo */}
         <div className="p-2 md:p-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -273,14 +273,14 @@ const ChatRoom = () => {
         </div>
 
         {/* Content Area - OnlineUsers focus */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Online Users - Main focus of sidebar */}
-          <div className="flex-1 overflow-y-auto min-h-0 bg-gradient-to-b from-blue-50 to-white">
+          <div className="flex-1 overflow-y-auto min-h-0 bg-gradient-to-b from-blue-50 to-white pb-2">
             <OnlineUsers users={room.users || []} />
           </div>
 
           {/* Browse Rooms Button */}
-          <div className="border-t border-gray-200 flex-shrink-0 p-2 md:p-3 bg-white">
+          <div className="border-t border-gray-200 flex-shrink-0 p-2 md:p-3 bg-white sticky bottom-0 md:static z-30 md:z-auto shadow-lg md:shadow-none">
             <button
               onClick={() => navigate('/')}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg transition font-semibold shadow-md hover:shadow-lg text-xs md:text-sm"
