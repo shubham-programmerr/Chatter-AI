@@ -422,12 +422,14 @@ const Home = () => {
               )}
 
               {/* Room Count Info */}
-              <div className="mt-4 text-center">
-                <p className="text-xs md:text-sm text-gray-600">
-                  Showing <span className="font-bold text-blue-600">{rooms.length}</span> of <span className="font-bold text-blue-600">{totalRooms}</span> rooms
-                  {totalPages > 1 ? ` • Page ${currentPage} of ${totalPages}` : ''}
-                </p>
-              </div>
+              {rooms.length > 0 && (
+                <div className="mt-4 text-center">
+                  <p className="text-xs md:text-sm text-gray-600">
+                    Showing <span className="font-bold text-blue-600">{rooms.length}</span> of <span className="font-bold text-blue-600">{totalRooms}</span> rooms
+                    {totalPages > 1 ? ` • Page ${currentPage} of ${totalPages}` : ''}
+                  </p>
+                </div>
+              )}
             )}
           </div>
         </div>
