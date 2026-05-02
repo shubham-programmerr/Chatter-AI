@@ -31,13 +31,22 @@ const ChatRoom = () => {
 
     const fetchData = async () => {
       try {
-        // Fetch all rooms
-        const roomsRes = await axios.get(`${API_URL}/rooms`);
-        setRooms(roomsRes.data);
+        // Fetch first page of rooms (15 rooms)
+        const roomsRes = await axios.get(`${API_URL}/rooms?page=1&limit=15`);
+        const roomsData = roomsRes.data.rooms || roomsRes.data; // Handle both paginated and non-paginated responses
+        setRooms(roomsData);
 
         // Fetch current room
-        const currentRoom = roomsRes.data.find((r) => r._id === roomId);
+        const currentRoom = roomsData.find((r) => r._id === roomId);
         setRoom(currentRoom);
+
+        // If current room not in first page, fetch it directly
+        if (!currentRoom) {
+          const currentRoomRes = await axios.get(`${API_URL}/rooms/${roomId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setRoom(currentRoomRes.data);
+        }
 
         // Fetch messages for this room
         const messagesRes = await axios.get(`${API_URL}/messages/room/${roomId}`);
