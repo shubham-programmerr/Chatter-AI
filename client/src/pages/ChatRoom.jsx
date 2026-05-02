@@ -311,8 +311,8 @@ const ChatRoom = () => {
           <RoomList rooms={rooms} currentRoomId={roomId} onJoinRoom={handleJoinRoom} />
         </div>
 
-        {/* Online Users */}
-        <div className="border-t border-gray-200 flex-shrink-0">
+        {/* Online Users - Scrollable when many users */}
+        <div className="border-t border-gray-200 flex-shrink-0 overflow-y-auto min-h-0 max-h-64 md:max-h-80">
           <OnlineUsers users={room.users || []} />
         </div>
       </div>
