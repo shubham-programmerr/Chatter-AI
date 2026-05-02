@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import useSocket from '../hooks/useSocket';
 import ChatWindow from '../components/Chat/ChatWindow';
 import RoomSettings from '../components/Chat/RoomSettings';
-import RoomList from '../components/Sidebar/RoomList';
 import OnlineUsers from '../components/Sidebar/OnlineUsers';
 import axios from 'axios';
 
@@ -17,7 +16,6 @@ const ChatRoom = () => {
   const { joinRoom, sendMessage, startTyping, stopTyping, leaveRoom, reactToMessage, onMessageReceived, onUserTyping, onUserJoined, onUserLeft, onRoomUsersUpdated, onMessageReactionUpdated, isConnected } = useSocket();
 
   const [room, setRoom] = useState(null);
-  const [rooms, setRooms] = useState([]);
   const [messages, setMessages] = useState([]);
   const [typing, setTyping] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,22 +29,11 @@ const ChatRoom = () => {
 
     const fetchData = async () => {
       try {
-        // Fetch first page of rooms (15 rooms)
-        const roomsRes = await axios.get(`${API_URL}/rooms?page=1&limit=15`);
-        const roomsData = roomsRes.data.rooms || roomsRes.data; // Handle both paginated and non-paginated responses
-        setRooms(roomsData);
-
-        // Fetch current room
-        const currentRoom = roomsData.find((r) => r._id === roomId);
-        setRoom(currentRoom);
-
-        // If current room not in first page, fetch it directly
-        if (!currentRoom) {
-          const currentRoomRes = await axios.get(`${API_URL}/rooms/${roomId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          setRoom(currentRoomRes.data);
-        }
+        // Fetch current room directly
+        const currentRoomRes = await axios.get(`${API_URL}/rooms/${roomId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setRoom(currentRoomRes.data);
 
         // Fetch messages for this room
         const messagesRes = await axios.get(`${API_URL}/messages/room/${roomId}`);
@@ -214,9 +201,6 @@ const ChatRoom = () => {
 
   const handleRoomSettingsUpdate = (updatedRoom) => {
     setRoom(updatedRoom);
-    // Refresh rooms list
-    const updatedRooms = rooms.map(r => r._id === updatedRoom._id ? updatedRoom : r);
-    setRooms(updatedRooms);
   };
 
   const handleOpenSettings = async () => {
@@ -230,33 +214,6 @@ const ChatRoom = () => {
       console.error('Failed to fetch room details:', error);
     }
     setShowSettings(true);
-  };
-
-  const handleJoinRoom = async (newRoomId, passwordProtected = false) => {
-    try {
-      let password = '';
-      // If room is password protected, ask for password
-      if (passwordProtected) {
-        password = prompt('🔐 This room is password protected.\nPlease enter the password:');
-        if (password === null) {
-          // User clicked cancel
-          return;
-        }
-      }
-
-      const response = await axios.post(
-        `${API_URL}/rooms/${newRoomId}/join`,
-        { password },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-      navigate(`/chat/${newRoomId}`);
-    } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Failed to join room';
-      console.error('Failed to join room', err);
-      alert(`❌ ${errorMsg}`);
-    }
   };
 
   if (loading) {
@@ -315,18 +272,21 @@ const ChatRoom = () => {
           </div>
         </div>
 
-        {/* Content Area - RoomList and OnlineUsers with proper flex constraints */}
+        {/* Content Area - OnlineUsers focus */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* RoomList - Scrollable */}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <RoomList rooms={rooms} currentRoomId={roomId} onJoinRoom={handleJoinRoom} />
+          {/* Online Users - Main focus of sidebar */}
+          <div className="flex-1 overflow-y-auto min-h-0 bg-gradient-to-b from-blue-50 to-white">
+            <OnlineUsers users={room.users || []} />
           </div>
 
-          {/* Online Users - Fixed height with independent scroll */}
-          <div className="border-t border-gray-200 flex-shrink-0">
-            <div className="h-48 md:h-56 overflow-y-auto bg-white">
-              <OnlineUsers users={room.users || []} />
-            </div>
+          {/* Browse Rooms Button */}
+          <div className="border-t border-gray-200 flex-shrink-0 p-2 md:p-3 bg-white">
+            <button
+              onClick={() => navigate('/')}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-lg transition font-semibold shadow-md hover:shadow-lg text-xs md:text-sm"
+            >
+              🌐 Browse Rooms
+            </button>
           </div>
         </div>
       </div>
