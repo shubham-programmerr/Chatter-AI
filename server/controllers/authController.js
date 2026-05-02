@@ -16,8 +16,8 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // 2. Hash the password
-    const salt = await bcrypt.genSalt(10);
+    // 2. Hash the password with lower cost (8 instead of 10 for faster login)
+    const salt = await bcrypt.genSalt(8);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // 3. Create the user
@@ -50,8 +50,9 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Use lean() for faster queries (don't need Mongoose document methods)
     // 1. Find user by email
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).lean();
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -102,43 +103,38 @@ const googleLogin = async (req, res) => {
     const payload = ticket.getPayload();
     const { email, name, picture, sub: googleId } = payload;
 
-    // 1. Check if user with googleId exists
-    let user = await User.findOne({ googleId });
+    // Single optimized query: check by googleId OR email
+    let user = await User.findOne({
+      $or: [{ googleId }, { email }]
+    });
 
-    if (user) {
-      // User exists with Google ID - login
-      console.log('✅ Google user found, logging in:', email);
-    } else {
-      // 2. Check if user with email exists (existing user linking Google)
-      user = await User.findOne({ email });
+    if (!user) {
+      // Create new user from Google
+      console.log('➕ Creating new Google user:', email);
 
-      if (user) {
-        // Link Google ID to existing user
-        console.log('🔗 Linking Google ID to existing user:', email);
-        user.googleId = googleId;
-        await user.save();
-      } else {
-        // 3. Create new user from Google
-        console.log('➕ Creating new Google user:', email);
+      // Generate unique username from email
+      let username = email.split('@')[0];
+      let counter = 1;
 
-        // Generate unique username from email
-        let username = email.split('@')[0];
-        let usernameTaken = await User.findOne({ username });
-        let counter = 1;
-
-        while (usernameTaken) {
-          username = `${email.split('@')[0]}${counter}`;
-          usernameTaken = await User.findOne({ username });
-          counter++;
-        }
-
-        user = await User.create({
-          username,
-          email,
-          googleId,
-          avatar: picture // Store Google profile picture
-        });
+      // Check if username is taken in a single efficient query
+      while (await User.findOne({ username }).select('username').lean()) {
+        username = `${email.split('@')[0]}${counter}`;
+        counter++;
       }
+
+      user = await User.create({
+        username,
+        email,
+        googleId,
+        avatar: picture // Store Google profile picture
+      });
+    } else if (!user.googleId) {
+      // Link Google ID to existing user (only if not already linked)
+      console.log('🔗 Linking Google ID to existing user:', email);
+      user.googleId = googleId;
+      await user.save();
+    } else {
+      console.log('✅ Google user found, logging in:', email);
     }
 
     // Generate JWT token
