@@ -5,16 +5,16 @@ const OnlineUsers = ({ users }) => {
 
   return (
     <div className="p-2 md:p-3 bg-gradient-to-b from-white to-gray-50">
-      <div className="flex items-center gap-1.5 md:gap-2 mb-2 md:mb-2 flex-shrink-0">
+      <div className="flex items-center gap-1.5 md:gap-2 mb-2 flex-shrink-0">
         <div className="flex items-center justify-center w-4 h-4 md:w-5 md:h-5 rounded-full bg-green-400 animate-pulse"></div>
         <h3 className="font-bold text-gray-800 text-sm md:text-xs">
           Online ({onlineUsers.length})
         </h3>
       </div>
       {onlineUsers.length === 0 ? (
-        <p className="text-gray-500 text-sm md:text-xs italic">No users</p>
+        <p className="text-gray-500 text-sm md:text-xs italic">No users online</p>
       ) : (
-        <div className="space-y-1 md:space-y-1">
+        <div className="space-y-1">
           {onlineUsers.map((user) => (
             <div key={user._id} className="flex items-center gap-1.5 md:gap-2 text-sm md:text-xs group cursor-pointer py-0.5 px-1 rounded hover:bg-blue-50 transition">
               <div className="flex items-center justify-center w-5 h-5 md:w-5 md:h-5 rounded-full text-white text-xs font-bold shadow-sm transform group-hover:scale-110 transition flex-shrink-0"

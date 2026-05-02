@@ -285,7 +285,7 @@ const ChatRoom = () => {
   return (
     <div className="h-screen flex bg-gray-100 overflow-hidden">
       {/* Sidebar - Fixed overlay on mobile, flex part on desktop */}
-      <div className={`w-72 h-screen md:h-full bg-white shadow-xl flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-20 md:z-auto`} style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className={`w-72 flex flex-col overflow-hidden border-r border-gray-200 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative h-screen md:h-full z-20 md:z-auto bg-white shadow-xl`} style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Logo */}
         <div className="p-2 md:p-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -306,16 +306,18 @@ const ChatRoom = () => {
           </div>
         </div>
 
-        {/* Content Area - RoomList and OnlineUsers */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Content Area - RoomList and OnlineUsers with proper flex constraints */}
+        <div className="flex-1 flex flex-col min-h-0">
           {/* RoomList - Scrollable */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <RoomList rooms={rooms} currentRoomId={roomId} onJoinRoom={handleJoinRoom} />
           </div>
 
-          {/* Online Users - Fixed at bottom with internal scrolling */}
-          <div className="border-t border-gray-200 flex-shrink-0 max-h-64 md:max-h-72 overflow-y-auto bg-white">
-            <OnlineUsers users={room.users || []} />
+          {/* Online Users - Always visible, scrollable when many users */}
+          <div className="border-t border-gray-200 flex-shrink-0 bg-white min-h-0">
+            <div className="max-h-56 md:max-h-64 overflow-y-auto h-full">
+              <OnlineUsers users={room.users || []} />
+            </div>
           </div>
         </div>
       </div>
