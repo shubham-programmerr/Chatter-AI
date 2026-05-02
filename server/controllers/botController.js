@@ -45,19 +45,47 @@ const isWeatherQuery = (query) => {
   return weatherKeywords.some(keyword => lowerQuery.includes(keyword));
 };
 
-// Determine if query needs search
+// Determine if query needs search (only for factual/informational queries, not casual chat)
 const shouldSearch = (query) => {
-  const searchKeywords = [
-    'what is', 'who is', 'when', 'where', 'how', 'why',
-    'latest', 'current', 'news', 'today', 'search',
-    'find', 'tell me', 'explain', 'what\'s', 'who\'s',
-    'definition', 'meaning', 'information about',
-    'facts about', 'statistics', 'research', 'update',
-    'recent', 'new', 'trending', 'breaking'
+  const lowerQuery = query.toLowerCase();
+  
+  // Don't search for casual/personal conversations
+  const casualPatterns = [
+    /^how\s+are\s+you/i,
+    /^how\'?s?\s+your\s+day/i,
+    /^what\'?s?\s+your\s+name/i,
+    /^who\s+are\s+you/i,
+    /^hello|hi\s+/i,
+    /^thanks|thank\s+you/i,
+    /^bye|goodbye/i,
+    /^good\s+(morning|afternoon|evening)/i,
+    /^ok|okay|sure|sounds\s+good/i,
+    /^i\s+agree|correct|right/i
   ];
 
-  const lowerQuery = query.toLowerCase();
-  return searchKeywords.some(keyword => lowerQuery.includes(keyword));
+  // If query matches casual patterns, don't search
+  if (casualPatterns.some(pattern => pattern.test(lowerQuery))) {
+    return false;
+  }
+
+  // Only search for these specific factual/informational patterns
+  const searchPatterns = [
+    /^what\s+is\s+/i,  // What is X?
+    /^who\s+is\s+/i,   // Who is X?
+    /^when\s+/i,       // When...?
+    /^where\s+/i,      // Where...?
+    /^why\s+/i,        // Why...?
+    /^how\s+to\s+/i,   // How to...?
+    /^how\s+do\s+/i,   // How do...?
+    /\snews\s/i,       // ...news...
+    /\strending\s/i,   // ...trending...
+    /\slatest\s/i,     // ...latest...
+    /\scurrent\s/i,    // ...current...
+    /latest|breaking|today/i,  // Latest/breaking news patterns
+    /search for|find information|tell me about|definition|meaning|facts about|statistics|research/i
+  ];
+
+  return searchPatterns.some(pattern => pattern.test(lowerQuery));
 };
 
 const handleBotMessage = async (req, res, io) => {
