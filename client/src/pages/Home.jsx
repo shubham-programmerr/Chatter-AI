@@ -312,124 +312,126 @@ const Home = () => {
                 <p className="text-gray-500 text-sm md:text-base">Create the first room to get started! →</p>
               </div>
             ) : (
-              <div className="space-y-3 md:space-y-4">
-                {rooms.map((room) => (
-                  <div
-                    key={room._id}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-xl transition border border-gray-200 hover:border-blue-300 p-4 md:p-6 group"
-                  >
-                    <div className="flex items-start justify-between mb-3 gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-lg md:text-xl font-bold text-gray-800 group-hover:text-blue-600 transition truncate">
-                            #{room.name}
-                          </h3>
-                          {room.isPrivate && (
-                            <span className="text-lg" title="Private room">🔒</span>
+              <>
+                <div className="space-y-3 md:space-y-4">
+                  {rooms.map((room) => (
+                    <div
+                      key={room._id}
+                      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition border border-gray-200 hover:border-blue-300 p-4 md:p-6 group"
+                    >
+                      <div className="flex items-start justify-between mb-3 gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-lg md:text-xl font-bold text-gray-800 group-hover:text-blue-600 transition truncate">
+                              #{room.name}
+                            </h3>
+                            {room.isPrivate && (
+                              <span className="text-lg" title="Private room">🔒</span>
+                            )}
+                          </div>
+                          <p className="text-gray-500 text-xs md:text-sm mt-1">
+                            👤 <span className="font-semibold">{room.owner?.username || 'Unknown'}</span>
+                          </p>
+                          {room.description && (
+                            <p className="text-gray-600 mt-2 text-xs md:text-sm leading-relaxed line-clamp-2">{room.description}</p>
                           )}
                         </div>
-                        <p className="text-gray-500 text-xs md:text-sm mt-1">
-                          👤 <span className="font-semibold">{room.owner?.username || 'Unknown'}</span>
-                        </p>
-                        {room.description && (
-                          <p className="text-gray-600 mt-2 text-xs md:text-sm leading-relaxed line-clamp-2">{room.description}</p>
-                        )}
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 md:gap-3 text-gray-600 flex-wrap">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">👥</span>
-                          <span className="text-xs md:text-sm font-medium">
-                            {room.users.length} member{room.users.length !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        {room.isPrivate && !room.users.some(u => u._id === user?._id) && (
-                          <div className="flex items-center gap-1 text-red-600 text-xs font-semibold bg-red-50 px-2 py-1 rounded">
-                            <span>🔐</span>
-                            <span>Private</span>
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 md:gap-3 text-gray-600 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">👥</span>
+                            <span className="text-xs md:text-sm font-medium">
+                              {room.users.length} member{room.users.length !== 1 ? 's' : ''}
+                            </span>
                           </div>
-                        )}
+                          {room.isPrivate && !room.users.some(u => u._id === user?._id) && (
+                            <div className="flex items-center gap-1 text-red-600 text-xs font-semibold bg-red-50 px-2 py-1 rounded">
+                              <span>🔐</span>
+                              <span>Private</span>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleJoinRoom(room._id, room.passwordProtected)}
+                          disabled={
+                            room.isPrivate && 
+                            !room.users.some(u => u._id === user?._id) && 
+                            !room.passwordProtected &&
+                            (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                          }
+                          className={`text-white px-4 md:px-6 py-1.5 md:py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs md:text-sm flex-shrink-0 ${
+                            room.isPrivate && 
+                            !room.users.some(u => u._id === user?._id) && 
+                            !room.passwordProtected &&
+                            (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                              ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                              : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                          }`}
+                          title={
+                            room.isPrivate && 
+                            !room.users.some(u => u._id === user?._id) && 
+                            !room.passwordProtected &&
+                            (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                              ? 'Private room - owner only'
+                              : room.passwordProtected ? 'Password protected - enter password to join' : ''
+                          }
+                        >
+                          {room.users.some(u => u._id === user?._id) ? 'Enter' : room.passwordProtected ? '🔐 Join' : 'Join'}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleJoinRoom(room._id, room.passwordProtected)}
-                        disabled={
-                          room.isPrivate && 
-                          !room.users.some(u => u._id === user?._id) && 
-                          !room.passwordProtected &&
-                          (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
-                        }
-                        className={`text-white px-4 md:px-6 py-1.5 md:py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs md:text-sm flex-shrink-0 ${
-                          room.isPrivate && 
-                          !room.users.some(u => u._id === user?._id) && 
-                          !room.passwordProtected &&
-                          (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
-                            ? 'bg-gray-400 cursor-not-allowed opacity-50'
-                            : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
-                        }`}
-                        title={
-                          room.isPrivate && 
-                          !room.users.some(u => u._id === user?._id) && 
-                          !room.passwordProtected &&
-                          (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
-                            ? 'Private room - owner only'
-                            : room.passwordProtected ? 'Password protected - enter password to join' : ''
-                        }
-                      >
-                        {room.users.some(u => u._id === user?._id) ? 'Enter' : room.passwordProtected ? '🔐 Join' : 'Join'}
-                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="mt-6 md:mt-8 flex items-center justify-center gap-2 md:gap-4">
-                  <button
-                    onClick={() => fetchRooms(currentPage - 1)}
-                    disabled={currentPage === 1 || isLoadingRooms}
-                    className="bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 px-3 md:px-4 py-2 rounded-lg transition font-medium text-xs md:text-sm"
-                  >
-                    ← Previous
-                  </button>
-
-                  <div className="flex items-center gap-1 md:gap-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => fetchRooms(page)}
-                        disabled={isLoadingRooms}
-                        className={`px-2 md:px-3 py-1.5 md:py-2 rounded-lg transition font-medium text-xs md:text-sm ${
-                          currentPage === page
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        } disabled:opacity-50`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => fetchRooms(currentPage + 1)}
-                    disabled={currentPage === totalPages || isLoadingRooms}
-                    className="bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 px-3 md:px-4 py-2 rounded-lg transition font-medium text-xs md:text-sm"
-                  >
-                    Next →
-                  </button>
+                  ))}
                 </div>
-              )}
 
-              {/* Room Count Info */}
-              {rooms.length > 0 && (
-                <div className="mt-4 text-center">
-                  <p className="text-xs md:text-sm text-gray-600">
-                    Showing <span className="font-bold text-blue-600">{rooms.length}</span> of <span className="font-bold text-blue-600">{totalRooms}</span> rooms
-                    {totalPages > 1 ? ` • Page ${currentPage} of ${totalPages}` : ''}
-                  </p>
-                </div>
-              )}
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-6 md:mt-8 flex items-center justify-center gap-2 md:gap-4">
+                    <button
+                      onClick={() => fetchRooms(currentPage - 1)}
+                      disabled={currentPage === 1 || isLoadingRooms}
+                      className="bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 px-3 md:px-4 py-2 rounded-lg transition font-medium text-xs md:text-sm"
+                    >
+                      ← Previous
+                    </button>
+
+                    <div className="flex items-center gap-1 md:gap-2">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => fetchRooms(page)}
+                          disabled={isLoadingRooms}
+                          className={`px-2 md:px-3 py-1.5 md:py-2 rounded-lg transition font-medium text-xs md:text-sm ${
+                            currentPage === page
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                          } disabled:opacity-50`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => fetchRooms(currentPage + 1)}
+                      disabled={currentPage === totalPages || isLoadingRooms}
+                      className="bg-gray-300 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 px-3 md:px-4 py-2 rounded-lg transition font-medium text-xs md:text-sm"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
+
+                {/* Room Count Info */}
+                {rooms.length > 0 && (
+                  <div className="mt-4 text-center">
+                    <p className="text-xs md:text-sm text-gray-600">
+                      Showing <span className="font-bold text-blue-600">{rooms.length}</span> of <span className="font-bold text-blue-600">{totalRooms}</span> rooms
+                      {totalPages > 1 ? ` • Page ${currentPage} of ${totalPages}` : ''}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
