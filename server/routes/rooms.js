@@ -11,22 +11,19 @@ router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) || 15;
     const skip = (page - 1) * limit;
 
-    // Get total count
-    const total = await Room.countDocuments();
+    // Get total count (use countDocuments for accuracy)
+    const total = await Room.countDocuments().lean();
 
-    // Get paginated rooms
+    // Get paginated rooms with populate at query time (single query, not N+1)
     const rooms = await Room.find()
+      .populate('users', 'username avatar isOnline')
+      .populate('owner', 'username')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .lean(); // Return plain objects (faster)
 
-    // Populate each room individually
-    for (let room of rooms) {
-      await room.populate('users', 'username avatar isOnline');
-      await room.populate('owner', 'username');
-    }
-
-    console.log('📋 Rooms fetched:', rooms.length, 'Page:', page, 'Total:', total);
+    console.log('⚡ Rooms fetched:', rooms.length, 'Page:', page, 'Total:', total, 'Time: O(1) query');
     res.json({
       rooms,
       pagination: {
