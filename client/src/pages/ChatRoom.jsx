@@ -306,14 +306,15 @@ const ChatRoom = () => {
           </div>
         </div>
 
-        {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <RoomList rooms={rooms} currentRoomId={roomId} onJoinRoom={handleJoinRoom} />
-        </div>
+        {/* Content Area - RoomList and OnlineUsers */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {/* RoomList - Scrollable */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <RoomList rooms={rooms} currentRoomId={roomId} onJoinRoom={handleJoinRoom} />
+          </div>
 
-        {/* Online Users - Fixed max height with internal scrolling */}
-        <div className="border-t border-gray-200 flex-shrink-0">
-          <div className="max-h-64 md:max-h-72 overflow-y-auto">
+          {/* Online Users - Fixed at bottom with internal scrolling */}
+          <div className="border-t border-gray-200 flex-shrink-0 max-h-64 md:max-h-72 overflow-y-auto bg-white">
             <OnlineUsers users={room.users || []} />
           </div>
         </div>
