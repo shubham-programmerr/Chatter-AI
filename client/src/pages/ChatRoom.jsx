@@ -339,19 +339,19 @@ const ChatRoom = () => {
                   <button
                     onClick={handleTogglePrivacy}
                     disabled={togglingPrivacy}
-                    className="hidden lg:flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300 hover:border-purple-400 transition disabled:opacity-50 font-medium text-purple-700 text-xs"
+                    className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300 hover:border-purple-400 transition disabled:opacity-50 font-medium text-purple-700 text-xs"
                     title="Toggle room privacy"
                   >
                     <span>{room.isPrivate ? '🔒' : '🌐'}</span>
-                    <span className="hidden lg:inline text-xs">{room.isPrivate ? 'Pvt' : 'Pub'}</span>
+                    <span className="hidden md:inline text-xs">{room.isPrivate ? 'Pvt' : 'Pub'}</span>
                   </button>
                   <button
                     onClick={handleOpenSettings}
-                    className="hidden md:flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 border border-blue-300 hover:border-blue-400 transition font-medium text-blue-700 text-xs"
+                    className="flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded-lg bg-gradient-to-r from-blue-100 to-cyan-100 hover:from-blue-200 hover:to-cyan-200 border border-blue-300 hover:border-blue-400 transition font-medium text-blue-700 text-xs"
                     title="Room settings"
                   >
                     <span>⚙️</span>
-                    <span className="hidden lg:inline text-xs">Set</span>
+                    <span className="hidden md:inline text-xs">Set</span>
                   </button>
                 </>
               )}
