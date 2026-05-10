@@ -36,7 +36,9 @@ const ChatRoom = () => {
         setRoom(currentRoomRes.data);
 
         // Fetch messages for this room
-        const messagesRes = await axios.get(`${API_URL}/messages/room/${roomId}`);
+        const messagesRes = await axios.get(`${API_URL}/messages/room/${roomId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setMessages(messagesRes.data);
 
         setLoading(false);
