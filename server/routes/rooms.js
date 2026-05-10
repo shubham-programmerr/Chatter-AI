@@ -4,8 +4,8 @@ const Room = require('../models/Room');
 const authMiddleware = require('../middleware/authMiddleware');
 const { hashRoomPassword, verifyRoomPassword } = require('../utils/roomPassword');
 
-// Get all rooms with pagination
-router.get('/', async (req, res) => {
+// Get all rooms with pagination (requires auth)
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 15;
@@ -47,6 +47,21 @@ router.get('/:id', authMiddleware, async (req, res) => {
       .populate('owner', 'username');
 
     if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    // SECURITY: IDOR Check - If room is private, user must be a member, owner, or admin
+    if (room.isPrivate) {
+      const isOwner = room.owner && room.owner._id.toString() === req.userId;
+      const isMember = room.users.some(u => u._id.toString() === req.userId);
+      
+      const User = require('../models/User');
+      const user = await User.findById(req.userId);
+      const isAdmin = user && user.isAdmin;
+
+      if (!isOwner && !isMember && !isAdmin) {
+        console.warn(`🚨 SECURITY: Unauthorized room access attempt by ${req.userId} to room ${room._id}`);
+        return res.status(403).json({ error: 'Access denied. You must join this private room first.' });
+      }
+    }
 
     const roomData = room.toObject();
     
@@ -128,15 +143,18 @@ router.post('/:id/join', authMiddleware, async (req, res) => {
     const User = require('../models/User');
     const user = await User.findById(req.userId);
     const isAdmin = user && user.isAdmin;
+    const isMember = room.users.some(u => u._id.toString() === req.userId);
     
-    console.log('👤 Is owner?', isOwner, '| Is admin?', isAdmin);
+    console.log('👤 Is owner?', isOwner, '| Is admin?', isAdmin, '| Is member?', isMember);
 
-    // If private, check password OR owner OR admin
+    // If private, check password OR owner OR admin OR already a member
     if (room.isPrivate) {
       if (isOwner) {
         console.log('✅ Owner can always join private room');
       } else if (isAdmin) {
         console.log('✅ Admin can always join private room');
+      } else if (isMember) {
+        console.log('✅ Existing member can re-enter private room without password');
       } else if (room.passwordProtected) {
         // Verify password
         const { password } = req.body;

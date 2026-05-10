@@ -33,7 +33,9 @@ const Home = () => {
   const fetchRooms = async (page = 1) => {
     setIsLoadingRooms(true);
     try {
-      const response = await axios.get(`${API_URL}/rooms?page=${page}&limit=15`);
+      const response = await axios.get(`${API_URL}/rooms?page=${page}&limit=15`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const { rooms: roomsData, pagination } = response.data;
       setRooms(roomsData);
       setCurrentPage(pagination.page);
@@ -341,7 +343,16 @@ const Home = () => {
                           )}
                         </div>
                         <button
-                          onClick={() => handleJoinRoom(room._id, room.passwordProtected)}
+                          onClick={() => {
+                            const isOwner = room.owner?._id === user?._id || room.owner?.toString?.() === user?._id;
+                            const isMember = room.users.some(u => u._id === user?._id);
+                            
+                            if (isOwner || isMember || user?.isAdmin) {
+                              navigate(`/chat/${room._id}`);
+                            } else {
+                              handleJoinRoom(room._id, room.passwordProtected);
+                            }
+                          }}
                           disabled={
                             room.isPrivate && 
                             !room.users.some(u => u._id === user?._id) && 

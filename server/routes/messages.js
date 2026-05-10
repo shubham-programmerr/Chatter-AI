@@ -4,11 +4,31 @@ const Message = require('../models/Message');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Get messages in a room with pagination
-router.get('/room/:roomId', async (req, res) => {
+router.get('/room/:roomId', authMiddleware, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
+
+    // SECURITY: IDOR Check - verify user has access to this room
+    const Room = require('../models/Room');
+    const room = await Room.findById(req.params.roomId);
+    
+    if (!room) return res.status(404).json({ error: 'Room not found' });
+
+    if (room.isPrivate) {
+      const isOwner = room.owner && room.owner.toString() === req.userId;
+      const isMember = room.users.some(u => u.toString() === req.userId);
+      
+      const User = require('../models/User');
+      const user = await User.findById(req.userId);
+      const isAdmin = user && user.isAdmin;
+
+      if (!isOwner && !isMember && !isAdmin) {
+        console.warn(`🚨 SECURITY: Unauthorized message read attempt by ${req.userId} in room ${room._id}`);
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
 
     const messages = await Message.find({ room: req.params.roomId })
       .populate('sender', 'username avatar profilePicture')

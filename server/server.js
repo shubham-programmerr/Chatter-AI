@@ -5,6 +5,8 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const compression = require('compression');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 // Load env variables
 dotenv.config();
@@ -27,10 +29,47 @@ const io = socketIo(server, {
   transports: ['websocket', 'polling']
 });
 
-// Middleware
-app.use(express.json());
-app.use(compression()); // Compress responses for faster transfer
+// ========================
+// SECURITY MIDDLEWARE
+// ========================
 
+// Helmet - Sets various HTTP security headers
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  crossOriginOpenerPolicy: false,
+}));
+
+// Body parser with strict size limits (prevent payload bombs)
+app.use(express.json({ limit: '1mb' }));
+
+// Compression
+app.use(compression());
+
+// Global rate limiter - 100 requests per 15 minutes per IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please slow down.' }
+});
+app.use(globalLimiter);
+
+// Strict rate limiter for auth routes - 10 attempts per 15 minutes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many login/register attempts. Please try again after 15 minutes.' }
+});
+
+// Strict rate limiter for bot API - 30 requests per minute per IP
+const botLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { error: 'Too many bot requests. Please wait a moment before trying again.' }
+});
+
+// CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
   'http://192.168.55.1:3000',
@@ -63,8 +102,8 @@ app.get('/', (req, res) => {
   res.send('ChatterAI API is running...');
 });
 
-// Authentication Routes
-app.use('/api/auth', require('./routes/auth'));
+// Authentication Routes (rate limited - 10 per 15min)
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 
 // Room Routes
 app.use('/api/rooms', require('./routes/rooms'));
@@ -75,8 +114,8 @@ app.use('/api/messages', require('./routes/messages'));
 // Reactions Routes
 app.use('/api/messages', require('./routes/reactions'));
 
-// Bot Routes
-app.use('/api/bot', require('./routes/bot'));
+// Bot Routes (rate limited - 30 per minute)
+app.use('/api/bot', botLimiter, require('./routes/bot'));
 
 // Admin Routes
 app.use('/api/admin', require('./routes/admin'));

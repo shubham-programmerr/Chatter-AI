@@ -10,14 +10,34 @@ const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    // SECURITY: Validate input fields
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // SECURITY: Validate username (3-30 chars, alphanumeric + underscores only)
+    if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
+      return res.status(400).json({ message: 'Username must be 3-30 characters (letters, numbers, underscores only)' });
+    }
+
+    // SECURITY: Validate email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    // SECURITY: Enforce password strength (min 6 chars)
+    if (password.length < 6 || password.length > 128) {
+      return res.status(400).json({ message: 'Password must be between 6 and 128 characters' });
+    }
+
     // 1. Check if user already exists
     const userExists = await User.findOne({ $or: [{ email }, { username }] });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // 2. Hash the password with lower cost (8 instead of 10 for faster login)
-    const salt = await bcrypt.genSalt(8);
+    // 2. Hash the password with secure cost factor
+    const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // 3. Create the user
@@ -29,7 +49,7 @@ const register = async (req, res) => {
 
     // 4. Generate JWT Token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d' // Token expires in 7 days
+      expiresIn: '24h' // Token expires in 24 hours
     });
 
     res.status(201).json({
@@ -37,6 +57,7 @@ const register = async (req, res) => {
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
+      avatar: user.avatar,
       token
     });
   } catch (error) {
@@ -69,7 +90,7 @@ const login = async (req, res) => {
 
     // 3. Generate new token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d'
+      expiresIn: '24h'
     });
 
     res.json({
@@ -77,6 +98,7 @@ const login = async (req, res) => {
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
+      avatar: user.avatar,
       token
     });
   } catch (error) {
@@ -139,7 +161,7 @@ const googleLogin = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d'
+      expiresIn: '24h'
     });
 
     res.json({

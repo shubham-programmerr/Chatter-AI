@@ -9,12 +9,23 @@ const useSocket = () => {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    // Create socket connection
+    // SECURITY: Get token for authenticated socket connection
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.log('⚠️ No token found, socket connection skipped');
+      return;
+    }
+
+    // Create socket connection with JWT auth
     const newSocket = io(SOCKET_URL, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5
+      reconnectionAttempts: 5,
+      auth: {
+        token: token
+      }
     });
 
     newSocket.on('connect', () => {

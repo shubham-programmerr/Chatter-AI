@@ -1,30 +1,83 @@
 const socketHandler = (io) => {
   const User = require('../models/User');
   const Message = require('../models/Message');
+  const jwt = require('jsonwebtoken');
+  const mongoose = require('mongoose');
+
+  // SECURITY: Authenticate socket connections with JWT
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    
+    if (!token) {
+      console.log('❌ Socket connection rejected: No token');
+      return next(new Error('Authentication required'));
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.data.authenticatedUserId = decoded.userId;
+      next();
+    } catch (err) {
+      console.log('❌ Socket connection rejected: Invalid token');
+      return next(new Error('Invalid token'));
+    }
+  });
+
+  // SECURITY: Validate MongoDB ObjectId format
+  const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
   io.on('connection', (socket) => {
-    console.log(`✅ User connected: ${socket.id}`);
+    console.log(`✅ User connected: ${socket.id} (userId: ${socket.data.authenticatedUserId})`);
 
     // User joins a room
     socket.on('joinRoom', async (data) => {
       const { roomId, userId } = data;
+
+      // SECURITY: Validate inputs
+      if (!roomId || !userId || !isValidObjectId(roomId) || !isValidObjectId(userId)) {
+        return socket.emit('error', 'Invalid room or user ID');
+      }
+
+      // SECURITY: Ensure the userId matches the authenticated user
+      if (userId !== socket.data.authenticatedUserId) {
+        return socket.emit('error', 'User ID mismatch');
+      }
+
+      const Room = require('../models/Room');
+      const roomCheck = await Room.findById(roomId);
+      
+      if (!roomCheck) {
+        return socket.emit('error', 'Room not found');
+      }
+
+      const user = await User.findById(userId);
+
+      // SECURITY: IDOR Check for sockets
+      if (roomCheck.isPrivate) {
+        const isOwner = roomCheck.owner && roomCheck.owner.toString() === userId;
+        const isMember = roomCheck.users.some(u => u.toString() === userId);
+        const isAdmin = user && user.isAdmin;
+
+        if (!isOwner && !isMember && !isAdmin) {
+          console.warn(`🚨 SECURITY: Unauthorized socket join attempt by ${userId} to room ${roomId}`);
+          return socket.emit('error', 'Access denied. You must join this private room first.');
+        }
+      }
+
       console.log(`📍 Join room event received:`, { roomId, userId, socketId: socket.id });
       socket.join(roomId);
       socket.data.userId = userId;
       socket.data.roomId = roomId;
 
       // Update user to online
-      const user = await User.findByIdAndUpdate(userId, { isOnline: true }, { returnDocument: 'after' });
-      console.log(`✅ User marked online:`, { userId, username: user?.username });
+      await User.findByIdAndUpdate(userId, { isOnline: true });
 
       // Add user to room's users array (if not already there)
-      const Room = require('../models/Room');
       const room = await Room.findByIdAndUpdate(
         roomId,
         { $addToSet: { users: userId } },
         { returnDocument: 'after' }
       ).populate('users', 'username avatar isOnline');
-      console.log(`✅ Room updated with user, total users:`, room?.users?.length);
 
       // Notify others in the room with full user data
       socket.to(roomId).emit('userJoined', {
@@ -39,7 +92,7 @@ const socketHandler = (io) => {
       // Send updated users list to ALL users in room (including the joining user)
       io.to(roomId).emit('roomUsersUpdated', room?.users || []);
 
-      console.log(`✅ User ${userId} joined room ${roomId} - event emitted`);
+      console.log(`✅ User ${userId} joined room ${roomId}`);
     });
 
     // User is typing
@@ -59,11 +112,26 @@ const socketHandler = (io) => {
       try {
         const { roomId, userId, content, isBot } = data;
 
+        // SECURITY: Validate inputs
+        if (!roomId || !userId || !content || !isValidObjectId(roomId) || !isValidObjectId(userId)) {
+          return socket.emit('error', 'Invalid message data');
+        }
+
+        // SECURITY: Verify user identity
+        if (userId !== socket.data.authenticatedUserId) {
+          return socket.emit('error', 'User ID mismatch');
+        }
+
+        // SECURITY: Enforce message length limit (5000 chars max)
+        if (typeof content !== 'string' || content.trim().length === 0 || content.length > 5000) {
+          return socket.emit('error', 'Message must be between 1 and 5000 characters');
+        }
+
         // Save message to DB
         const message = await Message.create({
           room: roomId,
           sender: userId,
-          content,
+          content: content.trim(),
           isBot: isBot || false
         });
 
