@@ -123,12 +123,20 @@ router.post('/:id/join', authMiddleware, async (req, res) => {
 
     // Check if user is the owner
     const isOwner = room.owner && room.owner._id.toString() === req.userId;
-    console.log('👤 Is owner?', isOwner);
+    
+    // Check if user is an admin
+    const User = require('../models/User');
+    const user = await User.findById(req.userId);
+    const isAdmin = user && user.isAdmin;
+    
+    console.log('👤 Is owner?', isOwner, '| Is admin?', isAdmin);
 
-    // If private, check password OR owner
+    // If private, check password OR owner OR admin
     if (room.isPrivate) {
       if (isOwner) {
         console.log('✅ Owner can always join private room');
+      } else if (isAdmin) {
+        console.log('✅ Admin can always join private room');
       } else if (room.passwordProtected) {
         // Verify password
         const { password } = req.body;

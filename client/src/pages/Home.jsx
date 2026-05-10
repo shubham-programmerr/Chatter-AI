@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace('localhost', window.location.hostname !== 'localhost' ? window.location.hostname : 'localhost');
 
 const Home = () => {
   const { user, logout, token, loading } = useAuth();
@@ -89,8 +89,8 @@ const Home = () => {
       setError('');
 
       let password = '';
-      // If room is password protected, ask for password
-      if (passwordProtected) {
+      // If room is password protected, ask for password, unless user is an admin
+      if (passwordProtected && !user?.isAdmin) {
         password = prompt('🔐 This room is password protected.\nPlease enter the password:');
         if (password === null) {
           // User clicked cancel
@@ -346,13 +346,15 @@ const Home = () => {
                             room.isPrivate && 
                             !room.users.some(u => u._id === user?._id) && 
                             !room.passwordProtected &&
-                            (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                            (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id) &&
+                            !user?.isAdmin
                           }
                           className={`text-white px-4 md:px-6 py-1.5 md:py-2 rounded-lg transition font-semibold shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 text-xs md:text-sm flex-shrink-0 ${
                             room.isPrivate && 
                             !room.users.some(u => u._id === user?._id) && 
                             !room.passwordProtected &&
-                            (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                            (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id) &&
+                            !user?.isAdmin
                               ? 'bg-gray-400 cursor-not-allowed opacity-50'
                               : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
                           }`}
@@ -360,7 +362,8 @@ const Home = () => {
                             room.isPrivate && 
                             !room.users.some(u => u._id === user?._id) && 
                             !room.passwordProtected &&
-                            (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id)
+                            (room.owner?._id !== user?._id && room.owner?.toString?.() !== user?._id) &&
+                            !user?.isAdmin
                               ? 'Private room - owner only'
                               : room.passwordProtected ? 'Password protected - enter password to join' : ''
                           }

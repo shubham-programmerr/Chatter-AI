@@ -7,7 +7,7 @@ import RoomSettings from '../components/Chat/RoomSettings';
 import OnlineUsers from '../components/Sidebar/OnlineUsers';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace('localhost', window.location.hostname !== 'localhost' ? window.location.hostname : 'localhost');
 
 const ChatRoom = () => {
   const { roomId } = useParams();
