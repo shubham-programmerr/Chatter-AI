@@ -203,7 +203,7 @@ const Admin = () => {
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Username</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">User</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Email</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Role</th>
@@ -214,7 +214,18 @@ const Admin = () => {
                 <tbody className="divide-y divide-gray-200">
                   {users.map((u) => (
                     <tr key={u._id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 font-medium text-gray-800">{u.username}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {u.avatar || u.profilePicture ? (
+                            <img src={u.avatar || u.profilePicture} alt={u.username} className="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center text-blue-600 font-bold border border-gray-200 shadow-sm">
+                              {u.username.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <span className="font-medium text-gray-800">{u.username}</span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 text-gray-600 text-sm">{u.email}</td>
                       <td className="px-6 py-4">
                         <span
