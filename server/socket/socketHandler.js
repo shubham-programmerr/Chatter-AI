@@ -182,6 +182,11 @@ const socketHandler = (io) => {
       try {
         const { roomId, messageId, emoji, userId } = data;
 
+        // SECURITY: Verify user identity (Prevent spoofing reactions as other users)
+        if (userId !== socket.data.authenticatedUserId) {
+          return socket.emit('error', 'User ID mismatch for reaction');
+        }
+
         const message = await Message.findById(messageId);
         if (!message) return;
 

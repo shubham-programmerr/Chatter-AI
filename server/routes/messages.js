@@ -48,6 +48,26 @@ router.post('/', authMiddleware, async (req, res) => {
   try {
     const { room, content, isBot } = req.body;
 
+    // SECURITY: Prevent unauthorized posting to private rooms
+    const Room = require('../models/Room');
+    const roomCheck = await Room.findById(room);
+    
+    if (!roomCheck) return res.status(404).json({ error: 'Room not found' });
+    
+    if (roomCheck.isPrivate) {
+      const isOwner = roomCheck.owner && roomCheck.owner.toString() === req.userId;
+      const isMember = roomCheck.users.some(u => u.toString() === req.userId);
+      
+      const User = require('../models/User');
+      const user = await User.findById(req.userId);
+      const isAdmin = user && user.isAdmin;
+
+      if (!isOwner && !isMember && !isAdmin) {
+        console.warn(`🚨 SECURITY: Unauthorized message send attempt by ${req.userId} to room ${roomCheck._id}`);
+        return res.status(403).json({ error: 'Access denied. You must join the room first.' });
+      }
+    }
+
     const message = await Message.create({
       room,
       sender: req.userId,

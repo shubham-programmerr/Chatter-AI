@@ -71,6 +71,11 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // SECURITY: Ensure inputs are strings (prevents NoSQL object injection)
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Invalid input format' });
+    }
+
     // Use lean() for faster queries (don't need Mongoose document methods)
     // 1. Find user by email
     const user = await User.findOne({ email }).lean();

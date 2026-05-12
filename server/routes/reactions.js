@@ -8,7 +8,7 @@ router.post('/:messageId/react', authMiddleware, async (req, res) => {
   try {
     const { messageId } = req.params;
     const { emoji } = req.body;
-    const userId = req.user.id;
+    const userId = req.userId;
 
     if (!emoji || emoji.length > 2) {
       return res.status(400).json({ error: 'Invalid emoji' });
@@ -79,7 +79,7 @@ router.get('/:messageId/reactions', async (req, res) => {
 router.delete('/:messageId/react/:emoji', authMiddleware, async (req, res) => {
   try {
     const { messageId, emoji } = req.params;
-    const userId = req.user.id;
+    const userId = req.userId;
 
     const message = await Message.findById(messageId);
     if (!message) {
