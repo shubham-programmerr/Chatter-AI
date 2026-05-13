@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminMiddleware = require('../middleware/adminMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 const User = require('../models/User');
 const Room = require('../models/Room');
 const Message = require('../models/Message');
