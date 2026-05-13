@@ -44,10 +44,11 @@ export const AuthProvider = ({ children }) => {
     const checkIPBan = async () => {
       try {
         const response = await axios.get(`${API_URL}/admin/check-ip-ban`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 5000 // 5 second timeout
         });
 
-        if (response.data.isBanned) {
+        if (response.data?.isBanned === true) {
           console.warn('🚫 User IP is banned. Auto-logging out...');
           setIpBanned(true);
           logout();
@@ -56,23 +57,32 @@ export const AuthProvider = ({ children }) => {
           setIpBanned(false);
         }
       } catch (error) {
-        if (error.response?.status === 403 && error.response?.data?.isBanned) {
+        // Only logout if we get a clear 403 with isBanned flag
+        if (error.response?.status === 403 && error.response?.data?.isBanned === true) {
           console.warn('🚫 User IP is banned. Auto-logging out...');
           setIpBanned(true);
           logout();
           alert('⛔ Your IP address has been banned due to policy violations. Please contact support.');
+        } else if (error.response?.status === 404) {
+          // Endpoint doesn't exist yet - silently continue
+          console.log('ℹ️ IP ban check endpoint not available yet');
+        } else {
+          // Any other error - just log it, don't logout user
+          console.log('ℹ️ IP ban check skipped:', error.message);
         }
-        // Silently ignore other errors
       }
     };
 
-    // Check immediately
-    checkIPBan();
+    // Check immediately (but with small delay to let login complete)
+    const initialTimeout = setTimeout(checkIPBan, 1000);
 
-    // Check every 30 seconds
-    const interval = setInterval(checkIPBan, 30000);
+    // Check every 60 seconds (less frequent)
+    const interval = setInterval(checkIPBan, 60000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, [token]);
 
   const register = async (username, email, password) => {

@@ -19,22 +19,25 @@ const socketHandler = (io) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       socket.data.authenticatedUserId = decoded.userId;
 
-      // Get client IP and check if banned
+      // Get client IP and check if banned (non-blocking)
       const clientIP = socket.handshake.headers['x-forwarded-for']?.split(',')[0].trim() ||
                        socket.conn.remoteAddress ||
                        'unknown';
       socket.data.clientIP = clientIP;
 
-      // Check if IP is banned
-      const bannedIP = await IPBan.findOne({
-        ipAddress: clientIP,
-        isActive: true
-      });
-
-      if (bannedIP) {
-        console.warn(`🚫 SOCKET BLOCKED: Banned IP attempted connection: ${clientIP} (Reason: ${bannedIP.reason})`);
-        return next(new Error('Your IP has been banned. Contact support for appeal.'));
-      }
+      // Check IP ban asynchronously without blocking connection
+      IPBan.findOne({ ipAddress: clientIP, isActive: true })
+        .then((bannedIP) => {
+          if (bannedIP) {
+            console.warn(`🚫 SOCKET: Banned IP detected: ${clientIP} (Reason: ${bannedIP.reason})`);
+            // Disconnect after a small delay to allow client-side handling
+            setTimeout(() => socket.disconnect(true), 100);
+          }
+        })
+        .catch((err) => {
+          console.log('⚠️ Error checking IP ban in Socket.io:', err.message);
+          // Continue connection even if check fails
+        });
 
       next();
     } catch (err) {
