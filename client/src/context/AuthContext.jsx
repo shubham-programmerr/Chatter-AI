@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const [ipBanned, setIpBanned] = useState(false);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -28,6 +29,51 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
   }, []);
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  };
+
+  // Check IP ban status periodically
+  useEffect(() => {
+    if (!token) return;
+
+    const checkIPBan = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/admin/check-ip-ban`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (response.data.isBanned) {
+          console.warn('🚫 User IP is banned. Auto-logging out...');
+          setIpBanned(true);
+          logout();
+          alert('⛔ Your IP address has been banned due to policy violations. Please contact support.');
+        } else {
+          setIpBanned(false);
+        }
+      } catch (error) {
+        if (error.response?.status === 403 && error.response?.data?.isBanned) {
+          console.warn('🚫 User IP is banned. Auto-logging out...');
+          setIpBanned(true);
+          logout();
+          alert('⛔ Your IP address has been banned due to policy violations. Please contact support.');
+        }
+        // Silently ignore other errors
+      }
+    };
+
+    // Check immediately
+    checkIPBan();
+
+    // Check every 30 seconds
+    const interval = setInterval(checkIPBan, 30000);
+
+    return () => clearInterval(interval);
+  }, [token]);
 
   const register = async (username, email, password) => {
     try {
@@ -90,17 +136,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-  };
-
   const value = {
     user,
     token,
     loading,
+    ipBanned,
     register,
     login,
     googleLogin,

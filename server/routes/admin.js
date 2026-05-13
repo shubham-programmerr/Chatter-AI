@@ -330,4 +330,38 @@ router.get('/moderation/stats', adminMiddleware, async (req, res) => {
   }
 });
 
+// Check if current IP is banned (accessible to all authenticated users)
+router.get('/check-ip-ban', authMiddleware, async (req, res) => {
+  try {
+    const clientIP = req.clientIP || 
+                     req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+                     req.socket.remoteAddress ||
+                     'unknown';
+
+    const IPBan = require('../models/IPBan');
+    const bannedIP = await IPBan.findOne({
+      ipAddress: clientIP,
+      isActive: true
+    });
+
+    if (bannedIP) {
+      console.warn(`⚠️ IP BAN CHECK: User ${req.userId} on banned IP ${clientIP}`);
+      return res.status(403).json({
+        isBanned: true,
+        ipAddress: clientIP,
+        reason: bannedIP.reason,
+        message: 'Your IP has been banned. Please contact support.'
+      });
+    }
+
+    res.json({
+      isBanned: false,
+      ipAddress: clientIP
+    });
+  } catch (error) {
+    console.error('Error checking IP ban:', error);
+    res.status(500).json({ error: 'Failed to check IP ban status' });
+  }
+});
+
 module.exports = router;

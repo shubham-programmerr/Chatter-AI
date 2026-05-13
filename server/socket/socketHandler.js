@@ -1,12 +1,13 @@
 const socketHandler = (io) => {
   const User = require('../models/User');
   const Message = require('../models/Message');
+  const IPBan = require('../models/IPBan');
   const jwt = require('jsonwebtoken');
   const mongoose = require('mongoose');
   const { filterContent } = require('../utils/contentFilter');
 
-  // SECURITY: Authenticate socket connections with JWT
-  io.use((socket, next) => {
+  // SECURITY: Authenticate socket connections with JWT and check IP ban
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token || socket.handshake.query?.token;
     
     if (!token) {
@@ -17,10 +18,28 @@ const socketHandler = (io) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       socket.data.authenticatedUserId = decoded.userId;
+
+      // Get client IP and check if banned
+      const clientIP = socket.handshake.headers['x-forwarded-for']?.split(',')[0].trim() ||
+                       socket.conn.remoteAddress ||
+                       'unknown';
+      socket.data.clientIP = clientIP;
+
+      // Check if IP is banned
+      const bannedIP = await IPBan.findOne({
+        ipAddress: clientIP,
+        isActive: true
+      });
+
+      if (bannedIP) {
+        console.warn(`🚫 SOCKET BLOCKED: Banned IP attempted connection: ${clientIP} (Reason: ${bannedIP.reason})`);
+        return next(new Error('Your IP has been banned. Contact support for appeal.'));
+      }
+
       next();
     } catch (err) {
-      console.log('❌ Socket connection rejected: Invalid token');
-      return next(new Error('Invalid token'));
+      console.log('❌ Socket connection rejected:', err.message);
+      return next(new Error('Invalid token or connection error'));
     }
   });
 
