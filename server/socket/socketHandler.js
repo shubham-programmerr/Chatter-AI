@@ -3,6 +3,7 @@ const socketHandler = (io) => {
   const Message = require('../models/Message');
   const jwt = require('jsonwebtoken');
   const mongoose = require('mongoose');
+  const { filterContent } = require('../utils/contentFilter');
 
   // SECURITY: Authenticate socket connections with JWT
   io.use((socket, next) => {
@@ -127,13 +128,77 @@ const socketHandler = (io) => {
           return socket.emit('error', 'Message must be between 1 and 5000 characters');
         }
 
+        // Get client IP from socket handshake
+        const clientIP = socket.handshake.headers['x-forwarded-for']?.split(',')[0].trim() ||
+                         socket.conn.remoteAddress ||
+                         'unknown';
+
+        // Filter content for profanity
+        const filterResult = filterContent(content);
+        console.log(`📝 MESSAGE via SOCKET: Content: "${content}" | Filtered: "${filterResult.isFlagged}" | Words: ${filterResult.flaggedWords.join(', ') || 'none'} | IP: ${clientIP}`);
+
+        // Get sender info
+        const sender = await User.findById(userId).lean();
+        const senderUsername = sender?.username || 'Anonymous';
+
         // Save message to DB
         const message = await Message.create({
           room: roomId,
           sender: userId,
-          content: content.trim(),
-          isBot: isBot || false
+          senderUsername: senderUsername,
+          content: filterResult.isFlagged ? filterResult.cleanContent : content.trim(),
+          isBot: isBot || false,
+          ipAddress: clientIP,
+          isFlagged: filterResult.isFlagged,
+          flaggedWords: filterResult.flaggedWords
         });
+
+        // Handle profanity detection
+        if (filterResult.isFlagged) {
+          console.warn(`🚨 PROFANITY DETECTED: User: ${senderUsername} (${userId}) | IP: ${clientIP} | Words: ${filterResult.flaggedWords.join(', ')}`);
+          
+          // Track IP violations
+          const IPBan = require('../models/IPBan');
+          let ipBanRecord = await IPBan.findOne({ ipAddress: clientIP });
+          if (!ipBanRecord) {
+            ipBanRecord = await IPBan.create({
+              ipAddress: clientIP,
+              userId: userId,
+              username: senderUsername,
+              reason: 'profanity',
+              violationCount: 1
+            });
+          } else {
+            ipBanRecord.violationCount += 1;
+            await ipBanRecord.save();
+          }
+
+          // Send bot warning message
+          const violationCount = ipBanRecord.violationCount;
+          let warningMessage = '';
+          if (violationCount === 1) {
+            warningMessage = `⚠️ Warning: Profanity detected and censored. Further violations may result in a ban.`;
+          } else if (violationCount === 2) {
+            warningMessage = `⚠️ Second warning: Please avoid profanity. Continued violations will result in an IP ban.`;
+          } else if (violationCount >= 3) {
+            warningMessage = `🚫 You have exceeded the profanity limit (${violationCount} violations). Your IP will be banned.`;
+          }
+
+          // Create bot warning message
+          const botMessage = await Message.create({
+            room: roomId,
+            sender: null,
+            senderUsername: 'System',
+            content: warningMessage,
+            isBot: true,
+            ipAddress: clientIP
+          });
+
+          await botMessage.populate('sender', 'username avatar profilePicture');
+
+          // Emit bot warning to room
+          io.to(roomId).emit('messageReceived', botMessage);
+        }
 
         await message.populate('sender', 'username avatar profilePicture');
 

@@ -11,6 +11,10 @@ const messageSchema = new mongoose.Schema({
     ref: 'User'
     // Not required strictly, because the Bot might not be a "User" in the DB
   },
+  senderUsername: {
+    type: String,
+    default: 'Anonymous'
+  },
   content: {
     type: String,
     required: true
@@ -23,6 +27,16 @@ const messageSchema = new mongoose.Schema({
     type: String,
     default: '' // For Week 3 Cloudinary integration
   },
+  ipAddress: {
+    type: String,
+    index: true
+  },
+  isFlagged: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  flaggedWords: [String],
   reactions: [{
     emoji: {
       type: String,
@@ -38,5 +52,7 @@ const messageSchema = new mongoose.Schema({
 // Add indexes for faster queries
 messageSchema.index({ room: 1, createdAt: -1 });
 messageSchema.index({ sender: 1 });
+messageSchema.index({ isFlagged: 1, createdAt: -1 });
+messageSchema.index({ ipAddress: 1 });
 
 module.exports = mongoose.model('Message', messageSchema);

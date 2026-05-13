@@ -11,8 +11,12 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState('users');
   const [users, setUsers] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [flaggedMessages, setFlaggedMessages] = useState([]);
+  const [bannedIPs, setBannedIPs] = useState([]);
+  const [moderationStats, setModerationStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [moderationPage, setModerationPage] = useState(1);
 
   // Redirect if not admin
   useEffect(() => {
@@ -29,17 +33,29 @@ const Admin = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersRes, roomsRes] = await Promise.all([
+      const [usersRes, roomsRes, statsRes, bannedRes, flaggedRes] = await Promise.all([
         axios.get(`${API_URL}/admin/users`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
         axios.get(`${API_URL}/admin/rooms`, {
           headers: { Authorization: `Bearer ${token}` }
-        })
+        }),
+        axios.get(`${API_URL}/admin/moderation/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: {} })),
+        axios.get(`${API_URL}/admin/moderation/banned-ips`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/admin/moderation/flagged-messages?page=1&limit=50`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: [] }))
       ]);
 
       setUsers(usersRes.data);
       setRooms(roomsRes.data);
+      setModerationStats(statsRes.data);
+      setBannedIPs(bannedRes.data);
+      setFlaggedMessages(flaggedRes.data.flaggedMessages || []);
       setError('');
     } catch (err) {
       console.error('Failed to fetch data:', err);
@@ -122,6 +138,67 @@ const Admin = () => {
     }
   };
 
+  const handleBanIP = async (ipAddress, reason = 'Profanity violation') => {
+    if (!ipAddress) {
+      setError('Invalid IP address');
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${API_URL}/admin/moderation/ban-ip`,
+        { ipAddress, reason },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setBannedIPs([...bannedIPs, { ipAddress, reason, bannedAt: new Date(), isActive: true }]);
+      setModerationStats({
+        ...moderationStats,
+        totalActiveBans: (moderationStats.totalActiveBans || 0) + 1
+      });
+      console.log('✅ IP banned:', ipAddress);
+    } catch (err) {
+      setError('Failed to ban IP');
+      console.error(err);
+    }
+  };
+
+  const handleCopyIP = (ip) => {
+    navigator.clipboard.writeText(ip);
+    alert(`✅ Copied IP: ${ip}`);
+  };
+
+  const handleUnbanIP = async (ipAddress) => {
+    if (!ipAddress) {
+      setError('Invalid IP address');
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${API_URL}/admin/moderation/unban-ip`,
+        { ipAddress },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      setBannedIPs(bannedIPs.map(b => 
+        b.ipAddress === ipAddress ? { ...b, isActive: false, unbannedAt: new Date() } : b
+      ));
+      setModerationStats({
+        ...moderationStats,
+        totalActiveBans: Math.max(0, (moderationStats.totalActiveBans || 1) - 1)
+      });
+      console.log('✅ IP unbanned:', ipAddress);
+    } catch (err) {
+      setError('Failed to unban IP');
+      console.error(err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
@@ -193,6 +270,21 @@ const Admin = () => {
             }`}
           >
             🌐 Rooms ({rooms.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('moderation')}
+            className={`px-6 py-3 rounded-lg font-semibold transition relative ${
+              activeTab === 'moderation'
+                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md'
+                : 'bg-white text-gray-700 border border-gray-200 hover:border-red-300'
+            }`}
+          >
+            🚨 Moderation ({moderationStats.totalFlaggedMessages || 0})
+            {moderationStats.totalFlaggedMessages > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                {moderationStats.totalFlaggedMessages}
+              </span>
+            )}
           </button>
         </div>
 
@@ -339,6 +431,234 @@ const Admin = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* Moderation Tab */}
+        {activeTab === 'moderation' && (
+          <div className="space-y-8">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+                <div className="text-3xl font-bold text-red-600">{moderationStats.totalFlaggedMessages || 0}</div>
+                <div className="text-sm text-gray-600 mt-1">Total Flagged Messages</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+                <div className="text-3xl font-bold text-orange-600">{moderationStats.flaggedToday || 0}</div>
+                <div className="text-sm text-gray-600 mt-1">Flagged Today</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+                <div className="text-3xl font-bold text-yellow-600">{moderationStats.totalActiveBans || 0}</div>
+                <div className="text-sm text-gray-600 mt-1">Active IP Bans</div>
+              </div>
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+                <div className="text-3xl font-bold text-blue-600">{bannedIPs.length}</div>
+                <div className="text-sm text-gray-600 mt-1">Total Bans</div>
+              </div>
+            </div>
+
+            {/* Banned IPs Section */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-red-50 to-orange-50 border-b border-gray-200 px-6 py-4">
+                <h2 className="text-xl font-bold text-red-700">🚫 Banned IP Addresses</h2>
+              </div>
+              <div className="overflow-x-auto">
+                {bannedIPs.length > 0 ? (
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">IP Address</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Username</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Reason</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Banned Date</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Violations</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {bannedIPs.map((ban) => (
+                        <tr key={ban._id || ban.ipAddress} className="hover:bg-gray-50 transition">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-gray-800 font-medium whitespace-nowrap">{ban.ipAddress}</span>
+                              <button
+                                onClick={() => handleCopyIP(ban.ipAddress)}
+                                className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs font-semibold transition"
+                                title="Copy IP address"
+                              >
+                                📋
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 text-sm">{ban.username || 'Unknown'}</td>
+                          <td className="px-6 py-4">
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                              {ban.reason}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 text-sm">
+                            {new Date(ban.bannedAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-700 rounded-full font-bold text-sm">
+                              {ban.violationCount || 1}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                ban.isActive
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}
+                            >
+                              {ban.isActive ? '🔴 Active' : '⚪ Inactive'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            {ban.isActive && (
+                              <button
+                                onClick={() => handleUnbanIP(ban.ipAddress)}
+                                className="px-3 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded text-xs font-semibold transition"
+                              >
+                                Unban
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="p-8 text-center text-gray-500">
+                    <p>✅ No banned IPs. Your chat is safe!</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Flagged Messages Table */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-gray-200 px-6 py-4">
+                <h2 className="text-xl font-bold text-yellow-700">⚠️ Flagged Messages (Showing IP Addresses for Instant Ban)</h2>
+                <p className="text-xs text-gray-600 mt-1">Abuse detected - IP addresses visible immediately for quick action</p>
+              </div>
+              {flaggedMessages && flaggedMessages.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">IP Address</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Username</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Message</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bad Words</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Room</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {flaggedMessages.map((msg) => (
+                        <tr key={msg._id} className="hover:bg-yellow-50 transition">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-block px-3 py-2 bg-red-100 text-red-700 rounded font-mono font-bold text-sm border border-red-300 whitespace-nowrap">
+                                {msg.ipAddress || 'N/A'}
+                              </span>
+                              {msg.ipAddress && (
+                                <button
+                                  onClick={() => handleCopyIP(msg.ipAddress)}
+                                  className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-xs font-semibold transition"
+                                  title="Copy IP address"
+                                >
+                                  📋
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 font-medium text-gray-800">{msg.senderUsername || 'Unknown'}</td>
+                          <td className="px-6 py-4 text-gray-700 text-sm max-w-xs truncate italic">"{msg.content}"</td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1">
+                              {msg.flaggedWords && msg.flaggedWords.length > 0 ? (
+                                msg.flaggedWords.map((word, i) => (
+                                  <span key={i} className="text-xs bg-red-200 text-red-800 px-2 py-1 rounded font-semibold">
+                                    {word}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-xs text-gray-500">-</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 text-sm">
+                            {msg.room?.name ? `#${msg.room.name}` : 'Unknown'}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 text-sm">
+                            {new Date(msg.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => handleBanIP(msg.ipAddress, 'Profanity violation')}
+                              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold transition shadow hover:shadow-md"
+                              title="Ban this IP address immediately"
+                            >
+                              Ban IP
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  <p>✅ No flagged messages. Great job keeping chat clean!</p>
+                </div>
+              )}
+            </div>
+
+            {/* Recent Flagged Messages */}
+            {moderationStats.recentFlaggedMessages && moderationStats.recentFlaggedMessages.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b border-gray-200 px-6 py-4">
+                  <h2 className="text-xl font-bold text-yellow-700">⚠️ Recent Flagged Messages</h2>
+                </div>
+                <div className="space-y-4 p-6">
+                  {moderationStats.recentFlaggedMessages.map((msg, idx) => (
+                    <div key={idx} className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="font-semibold text-gray-800">{msg.sender?.username || 'Unknown'}</div>
+                        <span className="text-xs text-gray-500">
+                          {new Date(msg.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-700 mb-3 italic">"{msg.content}"</div>
+                      {msg.flaggedWords && msg.flaggedWords.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {msg.flaggedWords.map((word, i) => (
+                            <span key={i} className="text-xs bg-red-200 text-red-800 px-2 py-1 rounded">
+                              {word}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="mt-3 flex gap-2">
+                        {msg.sender && (
+                          <button
+                            onClick={() => handleBanIP(msg.ipAddress, 'Flagged message content')}
+                            className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1 rounded font-semibold transition"
+                          >
+                            Ban IP
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -7,6 +7,7 @@ const cors = require('cors');
 const compression = require('compression');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const ipBanMiddleware = require('./middleware/ipBanMiddleware');
 
 // Load env variables
 dotenv.config();
@@ -54,6 +55,9 @@ const globalLimiter = rateLimit({
   message: { error: 'Too many requests, please slow down.' }
 });
 app.use(globalLimiter);
+
+// IP Ban Middleware - Check if IP is banned
+app.use(ipBanMiddleware);
 
 // Strict rate limiter for auth routes - 10 attempts per 15 minutes
 const authLimiter = rateLimit({
