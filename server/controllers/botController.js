@@ -312,8 +312,8 @@ ${hasContextReference ? 'The user is referencing previous messages - use the con
 ${isTeaching ? 'The user is teaching you something. Acknowledge what you learned and thank them for the information.' : ''}`;
 
     const response = await client.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      max_tokens: 1500,
+      model: 'openai/gpt-oss-20b',
+      max_tokens: 800,
       messages: [
         {
           role: 'system',

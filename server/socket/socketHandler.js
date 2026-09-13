@@ -151,9 +151,9 @@ const socketHandler = (io) => {
         }
 
         // Get client IP from socket handshake
-        const clientIP = socket.handshake.headers['x-forwarded-for']?.split(',')[0].trim() ||
-                         socket.conn.remoteAddress ||
-                         'unknown';
+        const clientIP = (socket.handshake.headers['x-forwarded-for']?.split(',')[0] || 
+                         socket.conn.remoteAddress || 
+                         'unknown').trim();
 
         // Filter content for profanity
         const filterResult = filterContent(content);

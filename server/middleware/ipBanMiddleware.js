@@ -6,11 +6,11 @@ const IPBan = require('../models/IPBan');
  */
 const ipBanMiddleware = async (req, res, next) => {
   try {
-    // Get client IP address
-    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() ||
-               req.socket.remoteAddress ||
-               req.connection.remoteAddress ||
-               'unknown';
+    // Get client IP address - handle various formats
+    const ip = (req.headers['x-forwarded-for']?.split(',')[0] || 
+                req.socket.remoteAddress || 
+                req.connection.remoteAddress || 
+                'unknown').trim();
 
     // Store IP in request for later use
     req.clientIP = ip;
@@ -31,11 +31,11 @@ const ipBanMiddleware = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('IP ban middleware error:', error);
+    console.error('❌ IP ban middleware error:', error);
     // Allow access if there's an error, but log it
-    req.clientIP = req.headers['x-forwarded-for']?.split(',')[0].trim() ||
-                   req.socket.remoteAddress ||
-                   'unknown';
+    req.clientIP = (req.headers['x-forwarded-for']?.split(',')[0] || 
+                    req.socket.remoteAddress || 
+                    'unknown').trim();
     next();
   }
 };

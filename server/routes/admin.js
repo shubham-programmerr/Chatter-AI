@@ -207,22 +207,36 @@ router.post('/moderation/ban-ip', adminMiddleware, async (req, res) => {
 
     const IPBan = require('../models/IPBan');
 
-    // Check if IP is already banned
-    const existingBan = await IPBan.findOne({ ipAddress });
-    if (existingBan && existingBan.isActive) {
+    // Check if IP already has an active ban
+    let banRecord = await IPBan.findOne({ ipAddress });
+    
+    if (banRecord && banRecord.isActive) {
       return res.status(400).json({ error: 'This IP is already banned' });
     }
 
-    const banRecord = await IPBan.create({
-      ipAddress,
-      userId,
-      username,
-      reason: reason || 'manual',
-      notes,
-      isActive: true
-    });
-
-    console.log(`🚫 BANNED IP: ${ipAddress} (Reason: ${reason || 'manual'}) by admin`);
+    // If record exists but not active, update it. Otherwise create new
+    if (banRecord) {
+      banRecord.isActive = true;
+      banRecord.reason = reason || 'manual';
+      banRecord.username = username || banRecord.username;
+      banRecord.userId = userId || banRecord.userId;
+      banRecord.notes = notes;
+      banRecord.bannedAt = new Date();
+      banRecord.unbannedAt = null;
+      await banRecord.save();
+      console.log(`🚫 RE-BANNED IP: ${ipAddress} (Reason: ${reason || 'manual'}) by admin`);
+    } else {
+      banRecord = await IPBan.create({
+        ipAddress,
+        userId,
+        username,
+        reason: reason || 'manual',
+        notes,
+        isActive: true,
+        bannedAt: new Date()
+      });
+      console.log(`🚫 NEW BAN: IP ${ipAddress} (Reason: ${reason || 'manual'}) by admin`);
+    }
 
     res.status(201).json(banRecord);
   } catch (error) {
@@ -334,10 +348,10 @@ router.get('/moderation/stats', adminMiddleware, async (req, res) => {
 // Check if current IP is banned (accessible to all authenticated users)
 router.get('/check-ip-ban', authMiddleware, async (req, res) => {
   try {
-    const clientIP = req.clientIP || 
-                     req.headers['x-forwarded-for']?.split(',')[0].trim() ||
-                     req.socket.remoteAddress ||
-                     'unknown';
+    const clientIP = (req.clientIP || 
+                     req.headers['x-forwarded-for']?.split(',')[0] || 
+                     req.socket.remoteAddress || 
+                     'unknown').trim();
 
     const IPBan = require('../models/IPBan');
     const bannedIP = await IPBan.findOne({
@@ -360,7 +374,7 @@ router.get('/check-ip-ban', authMiddleware, async (req, res) => {
       ipAddress: clientIP
     });
   } catch (error) {
-    console.error('Error checking IP ban:', error);
+    console.error('❌ Error checking IP ban:', error);
     res.status(500).json({ error: 'Failed to check IP ban status' });
   }
 });
