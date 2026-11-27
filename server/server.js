@@ -13,6 +13,8 @@ const ipBanMiddleware = require('./middleware/ipBanMiddleware');
 dotenv.config();
 
 const app = express();
+// Trust first reverse proxy (Render/Cloudflare) so rate limiters and IPs use X-Forwarded-For accurately
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {

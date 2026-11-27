@@ -22,6 +22,7 @@ const ChatRoom = () => {
   const [togglingPrivacy, setTogglingPrivacy] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [botError, setBotError] = useState('');
 
   // Fetch room details and messages
   useEffect(() => {
@@ -151,10 +152,11 @@ const ChatRoom = () => {
   const handleSendMessage = (content) => {
     if (!content.trim() || !roomId || !user?._id) return;
 
-    const isBotMessage = content.trim().startsWith('@bot');
+    const isBotMessage = content.trim().toLowerCase().startsWith('@bot');
     console.log('📨 Message sent:', { content, isBotMessage });
 
     if (isBotMessage) {
+      setBotError('');
       // Call bot API
       console.log('🤖 Calling bot API...');
       axios.post(
@@ -170,7 +172,9 @@ const ChatRoom = () => {
       ).then(res => {
         console.log('✅ Bot API response:', res.data);
       }).catch(error => {
+        const errorMsg = error.response?.data?.error || error.message || 'Failed to get bot response';
         console.error('❌ Bot API error:', error.response?.data || error.message);
+        setBotError(`🤖 Bot error: ${errorMsg}`);
       });
     }
 
@@ -368,6 +372,18 @@ const ChatRoom = () => {
 
           {/* Chat Window - Scrollable messages and input */}
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            {botError && (
+              <div className="bg-red-50 border-b border-red-200 text-red-700 px-4 py-2 text-xs md:text-sm flex items-center justify-between gap-3 flex-shrink-0">
+                <span>{botError}</span>
+                <button
+                  onClick={() => setBotError('')}
+                  className="text-red-500 hover:text-red-700 font-bold"
+                  aria-label="Dismiss bot error"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             <ChatWindow
               messages={messages}
               typing={typing}

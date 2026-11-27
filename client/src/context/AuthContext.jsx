@@ -1,8 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import jwtDecode from 'jwt-decode';
 
 const AuthContext = createContext();
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace('localhost', window.location.hostname !== 'localhost' ? window.location.hostname : 'localhost');
+
+const isTokenValid = (token) => {
+  if (!token) return false;
+  try {
+    const decoded = jwtDecode(token);
+    if (!decoded.exp) return true;
+    return decoded.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -14,18 +26,33 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(() => {
+    const storedToken = localStorage.getItem('token');
+    return isTokenValid(storedToken) ? storedToken : null;
+  });
   const [loading, setLoading] = useState(true);
   const [ipBanned, setIpBanned] = useState(false);
 
-  // Check if user is already logged in
+  // Check if user is already logged in with a non-expired token
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+    if (storedToken && storedUser && isTokenValid(storedToken)) {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
+      }
+    } else if (storedToken || storedUser) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setToken(null);
+      setUser(null);
     }
     setLoading(false);
   }, []);
@@ -57,12 +84,15 @@ export const AuthProvider = ({ children }) => {
           setIpBanned(false);
         }
       } catch (error) {
-        // Only logout if we get a clear 403 with isBanned flag
+        // Only logout if we get a clear 403 with isBanned flag, or 401 invalid/expired token
         if (error.response?.status === 403 && error.response?.data?.isBanned === true) {
           console.warn('🚫 User IP is banned. Auto-logging out...');
           setIpBanned(true);
           logout();
           alert('⛔ Your IP address has been banned due to policy violations. Please contact support.');
+        } else if (error.response?.status === 401) {
+          console.warn('🔑 Session expired or invalid token. Logging out...');
+          logout();
         } else if (error.response?.status === 404) {
           // Endpoint doesn't exist yet - silently continue
           console.log('ℹ️ IP ban check endpoint not available yet');

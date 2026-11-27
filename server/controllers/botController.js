@@ -311,9 +311,15 @@ ${hasContextReference ? 'The user is referencing previous messages - use the con
 
 ${isTeaching ? 'The user is teaching you something. Acknowledge what you learned and thank them for the information.' : ''}`;
 
+    if (!process.env.GROQ_API_KEY) {
+      console.error('❌ Bot error: GROQ_API_KEY is not configured');
+      return res.status(500).json({ error: 'Bot service is not configured (missing GROQ_API_KEY)' });
+    }
+
     const response = await client.chat.completions.create({
       model: 'openai/gpt-oss-20b',
-      max_tokens: 800,
+      max_tokens: 900,
+      reasoning_effort: 'low',
       messages: [
         {
           role: 'system',
@@ -326,7 +332,14 @@ ${isTeaching ? 'The user is teaching you something. Acknowledge what you learned
       ]
     });
 
-    let botReply = response.choices[0].message.content;
+    let botReply = response.choices[0]?.message?.content?.trim() || '';
+    if (!botReply) {
+      console.warn('⚠️ Empty bot reply from Groq:', {
+        finishReason: response.choices[0]?.finish_reason,
+        usage: response.usage
+      });
+      botReply = "Sorry, I couldn't generate a response just now. Please try again!";
+    }
 
     // Append search results link reference if available (but not for weather)
     if (searchResults.length > 0 && !weatherInfo) {
@@ -354,7 +367,11 @@ ${isTeaching ? 'The user is teaching you something. Acknowledge what you learned
     res.json(botMessage);
   } catch (error) {
     console.error('❌ Bot error:', error);
-    res.status(500).json({ error: 'Failed to get bot response' });
+    const status = error.status === 429 ? 429 : 500;
+    const message = error.status === 429
+      ? 'AI bot is temporarily rate-limited. Please try again in a moment.'
+      : 'Failed to get bot response';
+    res.status(status).json({ error: message });
   }
 };
 

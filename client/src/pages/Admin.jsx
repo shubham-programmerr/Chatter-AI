@@ -25,10 +25,13 @@ const Admin = () => {
     }
   }, [user, navigate]);
 
-  // Fetch users and rooms
+  // Fetch users and rooms once authenticated as admin
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (token && user?.isAdmin) {
+      fetchData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, user?.isAdmin]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -59,7 +62,13 @@ const Admin = () => {
       setError('');
     } catch (err) {
       console.error('Failed to fetch data:', err);
-      setError('Failed to load admin data');
+      if (err.response?.status === 401) {
+        logout();
+        navigate('/login');
+        return;
+      }
+      const detail = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(detail ? `Failed to load admin data: ${detail}` : 'Failed to load admin data');
     } finally {
       setLoading(false);
     }
@@ -244,8 +253,14 @@ const Admin = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-12">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center justify-between gap-4">
+            <span>{error}</span>
+            <button
+              onClick={fetchData}
+              className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded text-sm font-medium transition flex-shrink-0"
+            >
+              Retry
+            </button>
           </div>
         )}
 
