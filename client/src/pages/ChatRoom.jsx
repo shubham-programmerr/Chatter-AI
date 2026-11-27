@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import useSocket from '../hooks/useSocket';
@@ -23,6 +23,16 @@ const ChatRoom = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [botError, setBotError] = useState('');
+  const [previewProfile, setPreviewProfile] = useState(null);
+
+  useEffect(() => {
+    if (!previewProfile) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setPreviewProfile(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [previewProfile]);
 
   // Fetch room details and messages in parallel
   useEffect(() => {
@@ -237,6 +247,21 @@ const ChatRoom = () => {
     setShowSettings(true);
   };
 
+  const userDPs = useMemo(() => {
+    const map = {};
+    messages.forEach((m) => {
+      const id = m.sender?._id;
+      const dp = m.sender?.profilePicture || m.sender?.avatar;
+      if (id && dp) map[id] = dp;
+    });
+    return map;
+  }, [messages]);
+
+  const enrichedOnlineUsers = useMemo(
+    () => (room?.users || []).map((u) => (userDPs[u._id] && !u.profilePicture ? { ...u, profilePicture: userDPs[u._id] } : u)),
+    [room?.users, userDPs]
+  );
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-100">
@@ -297,7 +322,7 @@ const ChatRoom = () => {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Online Users - Main focus of sidebar */}
           <div className="flex-1 overflow-y-auto min-h-0 bg-gradient-to-b from-blue-50 to-white pb-2">
-            <OnlineUsers users={room.users || []} />
+            <OnlineUsers users={enrichedOnlineUsers} onViewProfile={setPreviewProfile} />
           </div>
 
           {/* Browse Rooms Button */}
@@ -405,10 +430,54 @@ const ChatRoom = () => {
               currentUser={user}
               onSendMessage={handleSendMessage}
               onReact={handleReact}
+              onViewProfile={setPreviewProfile}
             />
           </div>
         </div>
       </div>
+
+      {/* User DP Preview Modal */}
+      {previewProfile && (
+        <div
+          className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4"
+          onClick={() => setPreviewProfile(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+              <p className="font-bold text-gray-800 truncate">{previewProfile.username}</p>
+              <button
+                type="button"
+                onClick={() => setPreviewProfile(null)}
+                className="text-gray-500 hover:text-gray-800 rounded-lg px-2 py-1 transition font-bold"
+                aria-label="Close profile picture"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 flex flex-col items-center justify-center bg-gray-50">
+              {previewProfile.dpUrl ? (
+                <img
+                  src={previewProfile.dpUrl}
+                  alt={previewProfile.username}
+                  className="max-h-80 w-full object-contain rounded-xl shadow-md bg-white"
+                />
+              ) : (
+                <>
+                  <div
+                    className={`w-36 h-36 rounded-full bg-gradient-to-br ${previewProfile.gradientClass || 'from-blue-400 to-blue-600'} flex items-center justify-center text-white text-5xl font-bold shadow-lg`}
+                  >
+                    {previewProfile.username?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-4">No profile photo uploaded yet</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Room Settings Modal */}
       {showSettings && (
