@@ -14,7 +14,11 @@ const RoomSettings = ({ room, token, onUpdate, onClose, navigate }) => {
     name: room.name || '',
     description: room.description || '',
     isPrivate: room.isPrivate || false,
-    roomPassword: getInitialPassword()
+    roomPassword: getInitialPassword(),
+    autoWelcome: Boolean(room.botConfig?.autoWelcome),
+    welcomeMessage: room.botConfig?.welcomeMessage || '',
+    autoReact: Boolean(room.botConfig?.autoReact),
+    customPersona: room.botConfig?.customPersona || ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,7 +56,13 @@ const RoomSettings = ({ room, token, onUpdate, onClose, navigate }) => {
       const updateData = {
         name: formData.name,
         description: formData.description,
-        isPrivate: formData.isPrivate
+        isPrivate: formData.isPrivate,
+        botConfig: {
+          autoWelcome: formData.autoWelcome,
+          welcomeMessage: formData.welcomeMessage,
+          autoReact: formData.autoReact,
+          customPersona: formData.customPersona
+        }
       };
 
       // Only send password if it's been changed and is not empty
@@ -84,6 +94,7 @@ const RoomSettings = ({ room, token, onUpdate, onClose, navigate }) => {
 
       // Save the password so user can see it after saving
       if (formData.roomPassword) {
+        onUpdate(response.data);
         setSavedPassword(formData.roomPassword);
         setShowSavedPassword(true);
         // Store password in localStorage for persistence
@@ -267,6 +278,63 @@ const RoomSettings = ({ room, token, onUpdate, onClose, navigate }) => {
               </p>
             </div>
           )}
+
+          {/* Bot Powers Section */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-200 space-y-3">
+            <p className="text-sm font-bold text-indigo-800 flex items-center gap-2">
+              <span>🤖</span>
+              <span>ChatterAI Room Powers</span>
+            </p>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="autoWelcome"
+                checked={formData.autoWelcome}
+                onChange={handleChange}
+                className="w-4 h-4 cursor-pointer accent-indigo-600"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                👋 Auto-welcome new users when they join
+              </span>
+            </label>
+            {formData.autoWelcome && (
+              <input
+                type="text"
+                name="welcomeMessage"
+                value={formData.welcomeMessage}
+                onChange={handleChange}
+                maxLength={200}
+                placeholder="Optional custom welcome (use {username} or leave blank for AI)"
+                className="w-full border border-indigo-200 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            )}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="autoReact"
+                checked={formData.autoReact}
+                onChange={handleChange}
+                className="w-4 h-4 cursor-pointer accent-indigo-600"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                😊 Auto-react to chat messages with emojis
+              </span>
+            </label>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                🎭 Bot Room Style / Persona (optional)
+              </label>
+              <input
+                type="text"
+                name="customPersona"
+                value={formData.customPersona}
+                onChange={handleChange}
+                maxLength={200}
+                placeholder="e.g., Reply in Hinglish, keep answers super funny"
+                className="w-full border border-indigo-200 rounded-lg px-3 py-2 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            </div>
+          </div>
 
           {/* Room Info */}
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">

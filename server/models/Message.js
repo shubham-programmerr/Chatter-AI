@@ -45,7 +45,11 @@ const messageSchema = new mongoose.Schema({
     users: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
-    }]
+    }],
+    botReacted: {
+      type: Boolean,
+      default: false
+    }
   }]
 }, { timestamps: true });
 

@@ -39,7 +39,7 @@ router.post('/:messageId/react', authMiddleware, async (req, res) => {
         );
         
         // If no one reacted with this emoji anymore, remove the reaction
-        if (message.reactions[reactionIndex].users.length === 0) {
+        if (message.reactions[reactionIndex].users.length === 0 && !message.reactions[reactionIndex].botReacted) {
           message.reactions.splice(reactionIndex, 1);
         }
       }
@@ -95,7 +95,7 @@ router.delete('/:messageId/react/:emoji', authMiddleware, async (req, res) => {
       );
 
       // If no users left, remove the reaction
-      if (message.reactions[reactionIndex].users.length === 0) {
+      if (message.reactions[reactionIndex].users.length === 0 && !message.reactions[reactionIndex].botReacted) {
         message.reactions.splice(reactionIndex, 1);
       }
     }

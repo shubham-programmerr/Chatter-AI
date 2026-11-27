@@ -5,6 +5,7 @@ const socketHandler = (io) => {
   const jwt = require('jsonwebtoken');
   const mongoose = require('mongoose');
   const { filterContent } = require('../utils/contentFilter');
+  const { sendAutoWelcome, maybeAutoReact } = require('../utils/botActions');
 
   // SECURITY: Authenticate socket connections with JWT and check IP ban
   io.use(async (socket, next) => {
@@ -87,6 +88,9 @@ const socketHandler = (io) => {
         }
       }
 
+      const existingSockets = await io.in(roomId).fetchSockets();
+      const alreadyInRoom = existingSockets.some(s => s.data?.userId === userId);
+
       console.log(`📍 Join room event received:`, { roomId, userId, socketId: socket.id });
       socket.join(roomId);
       socket.data.userId = userId;
@@ -114,6 +118,12 @@ const socketHandler = (io) => {
 
       // Send updated users list to ALL users in room (including the joining user)
       io.to(roomId).emit('roomUsersUpdated', room?.users || []);
+
+      if (!alreadyInRoom && roomCheck.botConfig?.autoWelcome && user) {
+        sendAutoWelcome({ io, room: roomCheck, user }).catch((err) => {
+          console.error('❌ Auto-welcome async error:', err.message);
+        });
+      }
 
       console.log(`✅ User ${userId} joined room ${roomId}`);
     });
@@ -226,6 +236,13 @@ const socketHandler = (io) => {
 
         // Broadcast to room
         io.to(roomId).emit('messageReceived', message);
+
+        // Trigger bot auto-reaction on normal user messages if enabled for room
+        if (!filterResult.isFlagged && !isBot && !content.trim().toLowerCase().startsWith('@bot')) {
+          maybeAutoReact({ io, roomId, message }).catch((err) => {
+            console.error('❌ Auto-react async error:', err.message);
+          });
+        }
       } catch (error) {
         console.error('Message error:', error);
         socket.emit('error', 'Failed to send message');
@@ -288,7 +305,7 @@ const socketHandler = (io) => {
             message.reactions[reactionIndex].users = message.reactions[reactionIndex].users.filter(
               id => id.toString() !== userId.toString()
             );
-            if (message.reactions[reactionIndex].users.length === 0) {
+            if (message.reactions[reactionIndex].users.length === 0 && !message.reactions[reactionIndex].botReacted) {
               message.reactions.splice(reactionIndex, 1);
             }
           }

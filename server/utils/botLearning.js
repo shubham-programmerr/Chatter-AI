@@ -3,7 +3,7 @@ const BotLearning = require('../models/BotLearning');
 // Detect if user is teaching the bot
 const isTeachingBot = (message) => {
   const teachingKeywords = [
-    'remember that', 'remember,', 'note that', 'note:', 'keep in mind',
+    'remember that', 'remember,', 'remember ', 'note that', 'note:', 'keep in mind',
     'important:', 'fyi:', 'fun fact:', 'did you know', 'learn that',
     'i want you to remember', 'this is important', 'never forget',
     'always remember', 'you should know', 'let me teach', 'btw',
@@ -19,7 +19,7 @@ const isTeachingBot = (message) => {
 const extractFact = (message) => {
   // Remove common prefixes
   let fact = message
-    .replace(/^(remember that|remember,|note that|note:|keep in mind|important:|fyi:|fun fact:|did you know|learn that|i want you to remember|this is important|never forget|always remember|you should know|let me teach|btw|by the way|oh and|also remember|don't forget|i'm telling you|believe me|trust me)\s*/i, '')
+    .replace(/^(remember that|remember,|remember|note that|note:|keep in mind|important:|fyi:|fun fact:|did you know|learn that|i want you to remember|this is important|never forget|always remember|you should know|let me teach|btw|by the way|oh and|also remember|don't forget|i'm telling you|believe me|trust me)\s*/i, '')
     .trim();
 
   // Remove extra punctuation at the end

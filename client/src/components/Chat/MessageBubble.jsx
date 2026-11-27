@@ -22,6 +22,19 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
     setShowReactionPicker(false);
   };
 
+  const getReactionCount = (reaction) => (reaction.users?.length || 0) + (reaction.botReacted ? 1 : 0);
+
+  const getReactionTooltip = (reaction) => {
+    const names = [];
+    if (reaction.botReacted) names.push('ChatterAI 🤖');
+    if (Array.isArray(reaction.users)) {
+      reaction.users.filter(Boolean).forEach((u) => {
+        if (u.username) names.push(u.username);
+      });
+    }
+    return names.join(', ');
+  };
+
   if (isBot) {
     return (
       <div className="flex justify-start mb-2 md:mb-3 animate-fadeIn group">
@@ -47,10 +60,10 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
                       key={idx}
                       onClick={() => handleReaction(reaction.emoji)}
                       className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gray-100 hover:bg-gray-200 transition text-xs border border-gray-200 hover:border-gray-300"
-                      title={reaction.users.map(u => u.username).join(', ')}
+                      title={getReactionTooltip(reaction)}
                     >
                       <span>{reaction.emoji}</span>
-                      <span className="text-gray-600 font-medium text-xs">{reaction.users.length}</span>
+                      <span className="text-gray-600 font-medium text-xs">{getReactionCount(reaction)}</span>
                     </button>
                   ))}
                 </div>
@@ -136,10 +149,10 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
                     key={idx}
                     onClick={() => handleReaction(reaction.emoji)}
                     className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-gray-100 hover:bg-gray-200 transition text-xs border border-gray-200 hover:border-gray-300"
-                    title={reaction.users.map(u => u.username).join(', ')}
+                    title={getReactionTooltip(reaction)}
                   >
                     <span>{reaction.emoji}</span>
-                    <span className="text-gray-600 font-medium text-xs">{reaction.users.length}</span>
+                    <span className="text-gray-600 font-medium text-xs">{getReactionCount(reaction)}</span>
                   </button>
                 ))}
               </div>

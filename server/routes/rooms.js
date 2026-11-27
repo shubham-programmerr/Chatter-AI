@@ -216,11 +216,19 @@ router.put('/:id', authMiddleware, async (req, res) => {
       return res.status(403).json({ error: 'Only room owner can update room settings' });
     }
 
-    const { isPrivate, description, name, password, removePassword } = req.body;
+    const { isPrivate, description, name, password, removePassword, botConfig } = req.body;
 
     if (isPrivate !== undefined) room.isPrivate = isPrivate;
     if (description !== undefined) room.description = description;
     if (name !== undefined) room.name = name;
+    if (botConfig && typeof botConfig === 'object') {
+      room.botConfig = {
+        autoWelcome: Boolean(botConfig.autoWelcome),
+        welcomeMessage: typeof botConfig.welcomeMessage === 'string' ? botConfig.welcomeMessage.trim().substring(0, 200) : (room.botConfig?.welcomeMessage || ''),
+        autoReact: Boolean(botConfig.autoReact),
+        customPersona: typeof botConfig.customPersona === 'string' ? botConfig.customPersona.trim().substring(0, 200) : (room.botConfig?.customPersona || '')
+      };
+    }
 
     // Handle password changes
     let plainTextPassword = null;

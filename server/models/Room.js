@@ -33,6 +33,24 @@ const roomSchema = new mongoose.Schema({
   passwordProtected: {
     type: Boolean,
     default: false
+  },
+  botConfig: {
+    autoWelcome: {
+      type: Boolean,
+      default: false
+    },
+    welcomeMessage: {
+      type: String,
+      default: ''
+    },
+    autoReact: {
+      type: Boolean,
+      default: false
+    },
+    customPersona: {
+      type: String,
+      default: ''
+    }
   }
 }, { timestamps: true });
 
