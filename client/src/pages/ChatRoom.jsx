@@ -182,8 +182,12 @@ const ChatRoom = () => {
     sendMessage(roomId, user._id, content, false);
   };
 
+  const canManageRoom = Boolean(
+    room && (room.owner?._id === user?._id || room.owner?.toString?.() === user?._id || user?.isAdmin)
+  );
+
   const handleTogglePrivacy = async () => {
-    if (!room || room.owner?._id !== user?._id) return;
+    if (!canManageRoom) return;
 
     setTogglingPrivacy(true);
     try {
@@ -340,7 +344,7 @@ const ChatRoom = () => {
             </div>
 
             <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-              {(room.owner?._id === user?._id || room.owner?.toString?.() === user?._id) && (
+              {canManageRoom && (
                 <>
                   <button
                     onClick={handleTogglePrivacy}

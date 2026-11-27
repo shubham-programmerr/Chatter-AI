@@ -1,8 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const Room = require('../models/Room');
+const User = require('../models/User');
 const authMiddleware = require('../middleware/authMiddleware');
 const { hashRoomPassword, verifyRoomPassword } = require('../utils/roomPassword');
+
+const isRoomOwnerOrAdmin = async (room, userId) => {
+  if (!room || !userId) return false;
+  if (room.owner && room.owner.toString() === userId.toString()) return true;
+  const user = await User.findById(userId).select('isAdmin').lean();
+  return Boolean(user?.isAdmin);
+};
 
 // Get all rooms with pagination (requires auth)
 router.get('/', authMiddleware, async (req, res) => {
@@ -205,15 +213,15 @@ router.post('/:id/join', authMiddleware, async (req, res) => {
   }
 });
 
-// Update room (change private/public/password)
+// Update room (change private/public/password/botConfig)
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ error: 'Room not found' });
 
-    // Only owner can update room
-    if (room.owner.toString() !== req.userId) {
-      return res.status(403).json({ error: 'Only room owner can update room settings' });
+    // Only room owner or admin can update room
+    if (!(await isRoomOwnerOrAdmin(room, req.userId))) {
+      return res.status(403).json({ error: 'Only room owner or admin can update room settings' });
     }
 
     const { isPrivate, description, name, password, removePassword, botConfig } = req.body;
@@ -275,9 +283,9 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ error: 'Room not found' });
 
-    // Only owner can delete room
-    if (room.owner.toString() !== req.userId) {
-      return res.status(403).json({ error: 'Only room owner can delete room' });
+    // Only room owner or admin can delete room
+    if (!(await isRoomOwnerOrAdmin(room, req.userId))) {
+      return res.status(403).json({ error: 'Only room owner or admin can delete room' });
     }
 
     // Delete all messages in this room

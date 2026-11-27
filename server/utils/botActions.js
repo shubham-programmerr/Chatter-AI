@@ -46,7 +46,7 @@ const parseBotCommand = (prompt) => {
   }
 
   // Auto-welcome on (handles natural requests like "whenever anyone comes here wlc them ok")
-  if (/(?:welcom|wlc|wlcm|greet)/i.test(clean) && /(?:anyone|everyone|every\s+one|someone|new|join|joins|come|comes|enter|enters|auto)/i.test(clean)) {
+  if (/(?:welcom|wlc|wlcm|greet)/i.test(clean) && /(?:anyone|any\s*one|anybody|everyone|every\s*one|everybody|someone|some\b|people|users?|members?|guests?|new|join|joins|come|comes|enter|enters|auto)/i.test(clean)) {
     const customMatch = clean.match(/(?:saying|message:?)\s+["']?([^"']{3,200})["']?$/i) || clean.match(/with\s+["']([^"']{3,200})["']$/i);
     return {
       type: 'auto_welcome_on',
