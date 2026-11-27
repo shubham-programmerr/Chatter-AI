@@ -32,27 +32,27 @@ const OnlineUsers = ({ users, onViewProfile }) => {
             const gradientClass = AVATAR_GRADIENTS[(user.username?.charCodeAt(0) || 0) % AVATAR_GRADIENTS.length];
             return (
               <div key={user._id} className="flex items-center gap-2.5 py-2 px-2 rounded-lg hover:bg-blue-50 transition group">
-                <button
-                  type="button"
-                  onClick={() => onViewProfile?.({ username: user.username, dpUrl, gradientClass })}
-                  className="rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 hover:scale-105 transition cursor-pointer flex-shrink-0"
-                  title={`View ${user.username}'s DP`}
-                  aria-label={`View ${user.username}'s profile picture`}
-                >
-                  {dpUrl ? (
+                {dpUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => onViewProfile?.({ username: user.username, dpUrl, gradientClass })}
+                    className="rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 hover:scale-105 transition cursor-pointer flex-shrink-0"
+                    title={`View ${user.username}'s DP`}
+                    aria-label={`View ${user.username}'s profile picture`}
+                  >
                     <img
                       src={dpUrl}
                       alt={user.username}
                       className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-md border-2 border-white"
                     />
-                  ) : (
-                    <div
-                      className={`flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br ${gradientClass} text-white text-sm font-bold shadow-md`}
-                    >
-                      {user.username?.[0]?.toUpperCase() || 'U'}
-                    </div>
-                  )}
-                </button>
+                  </button>
+                ) : (
+                  <div
+                    className={`flex items-center justify-center w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br ${gradientClass} text-white text-sm font-bold shadow-md flex-shrink-0`}
+                  >
+                    {user.username?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-800 text-sm md:text-base font-semibold truncate group-hover:text-blue-600 transition">{user.username}</p>
                   <p className="text-xs text-green-600 font-medium">● Online</p>

@@ -112,27 +112,27 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact, onViewProfile }
     <div className={`flex mb-2 md:mb-3 animate-fadeIn group ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex gap-2 md:gap-2 max-w-xs sm:max-w-sm lg:max-w-md xl:max-w-lg ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
         <div className="flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => onViewProfile?.({ username: senderName, dpUrl, gradientClass })}
-            className="rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 hover:scale-110 active:scale-95 transition cursor-pointer block"
-            title={`View ${senderName}'s DP`}
-            aria-label={`View ${senderName}'s profile picture`}
-          >
-            {dpUrl ? (
+          {dpUrl ? (
+            <button
+              type="button"
+              onClick={() => onViewProfile?.({ username: senderName, dpUrl, gradientClass })}
+              className="rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 hover:scale-110 active:scale-95 transition cursor-pointer block"
+              title={`View ${senderName}'s DP`}
+              aria-label={`View ${senderName}'s profile picture`}
+            >
               <img
                 src={dpUrl}
                 alt={senderName}
                 className="h-7 w-7 md:h-7 md:w-7 rounded-full object-cover shadow-md border-2 border-white"
               />
-            ) : (
-              <div
-                className={`flex items-center justify-center h-7 w-7 md:h-7 md:w-7 rounded-full bg-gradient-to-br ${gradientClass} text-white text-xs font-bold shadow-md`}
-              >
-                {senderName[0]?.toUpperCase() || 'U'}
-              </div>
-            )}
-          </button>
+            </button>
+          ) : (
+            <div
+              className={`flex items-center justify-center h-7 w-7 md:h-7 md:w-7 rounded-full bg-gradient-to-br ${gradientClass} text-white text-xs font-bold shadow-md`}
+            >
+              {senderName[0]?.toUpperCase() || 'U'}
+            </div>
+          )}
         </div>
         <div className={`flex flex-col ${isCurrentUser ? '' : 'flex-1'}`}>
           {!isCurrentUser && (
