@@ -462,6 +462,7 @@ const ChatRoom = () => {
                 <img
                   src={previewProfile.dpUrl}
                   alt={previewProfile.username}
+                  referrerPolicy="no-referrer"
                   className="max-h-80 w-full object-contain rounded-xl shadow-md bg-white"
                 />
               ) : (

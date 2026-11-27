@@ -53,7 +53,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const room = await Room.findById(req.params.id)
       .select('-password')
-      .populate('users', 'username avatar isOnline')
+      .populate('users', 'username avatar profilePicture isOnline')
       .populate('owner', 'username')
       .lean();
 

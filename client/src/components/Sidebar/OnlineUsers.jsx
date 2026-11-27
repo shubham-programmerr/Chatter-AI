@@ -43,6 +43,7 @@ const OnlineUsers = ({ users, onViewProfile }) => {
                     <img
                       src={dpUrl}
                       alt={user.username}
+                      referrerPolicy="no-referrer"
                       className="w-8 h-8 md:w-9 md:h-9 rounded-full object-cover shadow-md border-2 border-white"
                     />
                   </button>

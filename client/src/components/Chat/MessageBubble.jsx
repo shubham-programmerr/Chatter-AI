@@ -9,6 +9,7 @@ const AVATAR_GRADIENTS = [
 
 const MessageBubble = ({ message, isCurrentUser, isBot, onReact, onViewProfile }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [imgError, setImgError] = useState(false);
   
   const formatTime = (date) => {
     return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -105,7 +106,8 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact, onViewProfile }
   }
 
   const senderName = message.sender?.username || message.senderUsername || 'User';
-  const dpUrl = getUserDP();
+  const rawDpUrl = getUserDP();
+  const dpUrl = imgError ? null : rawDpUrl;
   const gradientClass = AVATAR_GRADIENTS[(senderName.charCodeAt(0) || 0) % AVATAR_GRADIENTS.length];
 
   return (
@@ -123,6 +125,8 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact, onViewProfile }
               <img
                 src={dpUrl}
                 alt={senderName}
+                referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
                 className="h-7 w-7 md:h-7 md:w-7 rounded-full object-cover shadow-md border-2 border-white"
               />
             </button>

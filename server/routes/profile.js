@@ -59,7 +59,9 @@ router.put('/', authMiddleware, async (req, res) => {
     await user.save();
     console.log('✅ Profile updated:', user.username);
 
-    res.json(user);
+    const userObj = user.toObject();
+    delete userObj.password;
+    res.json(userObj);
   } catch (error) {
     console.error('❌ Failed to update profile:', error);
     res.status(500).json({ error: 'Failed to update profile', details: error.message });

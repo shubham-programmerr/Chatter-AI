@@ -104,7 +104,7 @@ const socketHandler = (io) => {
           roomId,
           { $addToSet: { users: userId } },
           { returnDocument: 'after' }
-        ).populate('users', 'username avatar isOnline')
+        ).populate('users', 'username avatar profilePicture isOnline')
       ]);
 
       // Notify others in the room with full user data
@@ -261,7 +261,7 @@ const socketHandler = (io) => {
         roomId,
         { $pull: { users: userId } },
         { returnDocument: 'after' }
-      ).populate('users', 'username avatar isOnline');
+      ).populate('users', 'username avatar profilePicture isOnline');
 
       // Update user to offline if not in any other room
       const userSockets = await io.in(roomId).fetchSockets();
@@ -342,7 +342,7 @@ const socketHandler = (io) => {
             roomId,
             { $pull: { users: userId } },
             { returnDocument: 'after' }
-          ).populate('users', 'username avatar isOnline');
+          ).populate('users', 'username avatar profilePicture isOnline');
 
           // Notify room of user leaving
           io.to(roomId).emit('userLeft', {

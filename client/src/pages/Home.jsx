@@ -163,9 +163,29 @@ const Home = () => {
             </div>
 
             <div className="flex items-center gap-2 md:gap-6 flex-shrink-0">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs md:text-sm text-gray-600">Welcome back</p>
-                <p className="text-base md:text-lg font-bold text-gray-800 truncate">{user?.username}</p>
+              <div className="flex items-center gap-2 md:gap-3">
+                {(user?.profilePicture || user?.avatar) ? (
+                  <img
+                    src={user.profilePicture || user.avatar}
+                    alt={user.username}
+                    referrerPolicy="no-referrer"
+                    onClick={() => navigate('/profile')}
+                    className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover border-2 border-blue-200 shadow-sm cursor-pointer hover:scale-105 transition"
+                    title="Your profile"
+                  />
+                ) : (
+                  <div
+                    onClick={() => navigate('/profile')}
+                    className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-sm cursor-pointer hover:scale-105 transition"
+                    title="Add your profile picture"
+                  >
+                    {user?.username?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                )}
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs md:text-sm text-gray-600">Welcome back</p>
+                  <p className="text-base md:text-lg font-bold text-gray-800 truncate">{user?.username}</p>
+                </div>
               </div>
 
               {user?.isAdmin && (

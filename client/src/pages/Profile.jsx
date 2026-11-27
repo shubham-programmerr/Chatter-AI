@@ -5,8 +5,32 @@ import axios from 'axios';
 
 const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace('localhost', window.location.hostname !== 'localhost' ? window.location.hostname : 'localhost');
 
+const compressImageToDataUrl = (file, maxSize = 400, quality = 0.8) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => resolve(reader.result);
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(reader.result);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
 const Profile = () => {
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,8 +63,8 @@ const Profile = () => {
         dob: res.data.dob ? res.data.dob.split('T')[0] : ''
       });
       
-      if (res.data.profilePicture) {
-        setPreviewPic(res.data.profilePicture);
+      if (res.data.profilePicture || res.data.avatar) {
+        setPreviewPic(res.data.profilePicture || res.data.avatar);
       }
       setLoading(false);
     } catch (err) {
@@ -60,23 +84,24 @@ const Profile = () => {
     setSuccess('');
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image size must be less than 5MB');
-        return;
-      }
+    if (!file) return;
 
-      setProfilePic(file);
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size must be less than 5MB');
+      return;
+    }
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewPic(reader.result);
-      };
-      reader.readAsDataURL(file);
+    setError('');
+    setProfilePic(file);
+
+    try {
+      const compressedDataUrl = await compressImageToDataUrl(file);
+      setPreviewPic(compressedDataUrl);
+    } catch {
+      setError('Failed to process selected image');
     }
   };
 
@@ -89,10 +114,10 @@ const Profile = () => {
     try {
       let profilePictureUrl = previewPic;
 
-      // Upload image if changed
+      // Upload compressed image if changed
       if (profilePic) {
         const formDataImg = new FormData();
-        formDataImg.append('file', profilePic);
+        formDataImg.append('file', previewPic || profilePic);
         formDataImg.append('upload_preset', 'chatterai'); // Update with your Cloudinary preset
 
         try {
@@ -120,11 +145,20 @@ const Profile = () => {
         }
       );
 
+      updateUser({
+        username: res.data.username,
+        email: res.data.email,
+        avatar: res.data.avatar,
+        profilePicture: res.data.profilePicture
+      });
+      if (res.data.profilePicture || res.data.avatar) {
+        setPreviewPic(res.data.profilePicture || res.data.avatar);
+      }
       setSuccess('Profile updated successfully! 🎉');
       console.log('✅ Profile updated:', res.data);
       setProfilePic(null);
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Failed to update profile';
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to update profile';
       setError(errorMsg);
       console.error('Profile update error:', err);
     } finally {
@@ -192,6 +226,8 @@ const Profile = () => {
                   <img
                     src={previewPic}
                     alt="Profile"
+                    referrerPolicy="no-referrer"
+                    onError={() => setPreviewPic('')}
                     className="w-32 h-32 rounded-full object-cover border-4 border-blue-200 shadow-lg"
                   />
                 ) : (

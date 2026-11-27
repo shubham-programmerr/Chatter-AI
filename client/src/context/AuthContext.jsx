@@ -64,6 +64,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  const updateUser = (updates) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...updates };
+      localStorage.setItem('user', JSON.stringify(next));
+      return next;
+    });
+  };
+
   // Check IP ban status periodically
   useEffect(() => {
     if (!token) return;
@@ -185,6 +193,7 @@ export const AuthProvider = ({ children }) => {
     login,
     googleLogin,
     logout,
+    updateUser,
     isAuthenticated: !!token
   };
 

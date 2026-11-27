@@ -323,8 +323,13 @@ const Admin = () => {
                     <tr key={u._id} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {u.avatar || u.profilePicture ? (
-                            <img src={u.avatar || u.profilePicture} alt={u.username} className="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm" />
+                          {u.profilePicture || u.avatar ? (
+                            <img
+                              src={u.profilePicture || u.avatar}
+                              alt={u.username}
+                              referrerPolicy="no-referrer"
+                              className="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm"
+                            />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center text-blue-600 font-bold border border-gray-200 shadow-sm">
                               {u.username.charAt(0).toUpperCase()}

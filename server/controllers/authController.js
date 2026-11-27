@@ -58,6 +58,7 @@ const register = async (req, res) => {
       email: user.email,
       isAdmin: user.isAdmin,
       avatar: user.avatar,
+      profilePicture: user.profilePicture,
       token
     });
   } catch (error) {
@@ -104,6 +105,7 @@ const login = async (req, res) => {
       email: user.email,
       isAdmin: user.isAdmin,
       avatar: user.avatar,
+      profilePicture: user.profilePicture,
       token
     });
   } catch (error) {
@@ -174,6 +176,7 @@ const googleLogin = async (req, res) => {
       username: user.username,
       email: user.email,
       avatar: user.avatar,
+      profilePicture: user.profilePicture,
       isAdmin: user.isAdmin,
       token
     });
