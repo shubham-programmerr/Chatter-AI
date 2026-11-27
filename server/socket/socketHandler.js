@@ -68,13 +68,15 @@ const socketHandler = (io) => {
       }
 
       const Room = require('../models/Room');
-      const roomCheck = await Room.findById(roomId);
-      
+      const [roomCheck, user, existingSockets] = await Promise.all([
+        Room.findById(roomId),
+        User.findById(userId),
+        io.in(roomId).fetchSockets()
+      ]);
+
       if (!roomCheck) {
         return socket.emit('error', 'Room not found');
       }
-
-      const user = await User.findById(userId);
 
       // SECURITY: IDOR Check for sockets
       if (roomCheck.isPrivate) {
@@ -88,7 +90,6 @@ const socketHandler = (io) => {
         }
       }
 
-      const existingSockets = await io.in(roomId).fetchSockets();
       const alreadyInRoom = existingSockets.some(s => s.data?.userId === userId);
 
       console.log(`📍 Join room event received:`, { roomId, userId, socketId: socket.id });
@@ -96,15 +97,15 @@ const socketHandler = (io) => {
       socket.data.userId = userId;
       socket.data.roomId = roomId;
 
-      // Update user to online
-      await User.findByIdAndUpdate(userId, { isOnline: true });
-
-      // Add user to room's users array (if not already there)
-      const room = await Room.findByIdAndUpdate(
-        roomId,
-        { $addToSet: { users: userId } },
-        { returnDocument: 'after' }
-      ).populate('users', 'username avatar isOnline');
+      // Update user to online and add to room's users array in parallel
+      const [, room] = await Promise.all([
+        User.findByIdAndUpdate(userId, { isOnline: true }),
+        Room.findByIdAndUpdate(
+          roomId,
+          { $addToSet: { users: userId } },
+          { returnDocument: 'after' }
+        ).populate('users', 'username avatar isOnline')
+      ]);
 
       // Notify others in the room with full user data
       socket.to(roomId).emit('userJoined', {

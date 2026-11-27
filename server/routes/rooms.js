@@ -19,17 +19,18 @@ router.get('/', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 15;
     const skip = (page - 1) * limit;
 
-    // Get total count (use countDocuments for accuracy)
-    const total = await Room.countDocuments().lean();
-
-    // Get paginated rooms with populate at query time (single query, not N+1)
-    const rooms = await Room.find()
-      .populate('users', 'username avatar isOnline')
-      .populate('owner', 'username')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean(); // Return plain objects (faster)
+    // Fetch total count and paginated rooms in parallel
+    const [total, rooms] = await Promise.all([
+      Room.countDocuments(),
+      Room.find()
+        .select('-password')
+        .populate('users', 'username isOnline')
+        .populate('owner', 'username')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+    ]);
 
     console.log('⚡ Rooms fetched:', rooms.length, 'Page:', page, 'Total:', total, 'Time: O(1) query');
     res.json({
@@ -47,12 +48,14 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// Get a specific room (with password for owner)
+// Get a specific room
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const room = await Room.findById(req.params.id)
+      .select('-password')
       .populate('users', 'username avatar isOnline')
-      .populate('owner', 'username');
+      .populate('owner', 'username')
+      .lean();
 
     if (!room) return res.status(404).json({ error: 'Room not found' });
 
@@ -60,25 +63,17 @@ router.get('/:id', authMiddleware, async (req, res) => {
     if (room.isPrivate) {
       const isOwner = room.owner && room.owner._id.toString() === req.userId;
       const isMember = room.users.some(u => u._id.toString() === req.userId);
-      
-      const User = require('../models/User');
-      const user = await User.findById(req.userId);
-      const isAdmin = user && user.isAdmin;
 
-      if (!isOwner && !isMember && !isAdmin) {
-        console.warn(`🚨 SECURITY: Unauthorized room access attempt by ${req.userId} to room ${room._id}`);
-        return res.status(403).json({ error: 'Access denied. You must join this private room first.' });
+      if (!isOwner && !isMember) {
+        const user = await User.findById(req.userId).select('isAdmin').lean();
+        if (!user?.isAdmin) {
+          console.warn(`🚨 SECURITY: Unauthorized room access attempt by ${req.userId} to room ${room._id}`);
+          return res.status(403).json({ error: 'Access denied. You must join this private room first.' });
+        }
       }
     }
 
-    const roomData = room.toObject();
-    
-    // Include password only for room owner
-    if (room.owner._id.toString() !== req.userId) {
-      delete roomData.password;
-    }
-
-    res.json(roomData);
+    res.json(room);
   } catch (error) {
     console.error('❌ Fetch room error:', error);
     res.status(500).json({ error: 'Failed to fetch room' });

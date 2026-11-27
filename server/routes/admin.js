@@ -5,6 +5,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const User = require('../models/User');
 const Room = require('../models/Room');
 const Message = require('../models/Message');
+const { invalidateIPBanCache } = require('../middleware/ipBanMiddleware');
 
 // Get all users
 router.get('/users', adminMiddleware, async (req, res) => {
@@ -238,6 +239,7 @@ router.post('/moderation/ban-ip', adminMiddleware, async (req, res) => {
       console.log(`🚫 NEW BAN: IP ${ipAddress} (Reason: ${reason || 'manual'}) by admin`);
     }
 
+    invalidateIPBanCache();
     res.status(201).json(banRecord);
   } catch (error) {
     console.error('❌ Error banning IP:', error);
@@ -269,6 +271,7 @@ router.post('/moderation/unban-ip', adminMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'IP ban record not found' });
     }
 
+    invalidateIPBanCache();
     console.log(`✅ UNBANNED IP: ${ipAddress} by admin`);
 
     res.json(banRecord);

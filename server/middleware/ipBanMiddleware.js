@@ -1,5 +1,35 @@
 const IPBan = require('../models/IPBan');
 
+const BAN_CACHE_TTL_MS = 15000;
+let activeBanCache = new Set();
+let cacheExpiresAt = 0;
+let pendingCacheLoad = null;
+
+const getActiveBannedIPs = async () => {
+  const now = Date.now();
+  if (now < cacheExpiresAt) {
+    return activeBanCache;
+  }
+  if (!pendingCacheLoad) {
+    pendingCacheLoad = IPBan.find({ isActive: true })
+      .select('ipAddress')
+      .lean()
+      .then((records) => {
+        activeBanCache = new Set(records.map((r) => r.ipAddress));
+        cacheExpiresAt = Date.now() + BAN_CACHE_TTL_MS;
+        return activeBanCache;
+      })
+      .finally(() => {
+        pendingCacheLoad = null;
+      });
+  }
+  return pendingCacheLoad;
+};
+
+const invalidateIPBanCache = () => {
+  cacheExpiresAt = 0;
+};
+
 /**
  * Middleware to check if IP address is banned
  * Blocks access if IP is in the ban list
@@ -15,18 +45,17 @@ const ipBanMiddleware = async (req, res, next) => {
     // Store IP in request for later use
     req.clientIP = ip;
 
-    // Check if IP is banned and active
-    const bannedIP = await IPBan.findOne({
-      ipAddress: ip,
-      isActive: true
-    });
-
-    if (bannedIP) {
-      console.warn(`🚫 BLOCKED: Access attempt from banned IP: ${ip} (User: ${bannedIP.username}, Reason: ${bannedIP.reason})`);
-      return res.status(403).json({
-        error: 'Access Denied',
-        message: 'Your IP address has been banned due to policy violations. Contact support for appeal.'
-      });
+    const bannedSet = await getActiveBannedIPs();
+    if (bannedSet.has(ip)) {
+      const bannedIP = await IPBan.findOne({ ipAddress: ip, isActive: true }).select('username reason').lean();
+      if (bannedIP) {
+        console.warn(`🚫 BLOCKED: Access attempt from banned IP: ${ip} (User: ${bannedIP.username}, Reason: ${bannedIP.reason})`);
+        return res.status(403).json({
+          error: 'Access Denied',
+          message: 'Your IP address has been banned due to policy violations. Contact support for appeal.'
+        });
+      }
+      invalidateIPBanCache();
     }
 
     next();
@@ -41,3 +70,4 @@ const ipBanMiddleware = async (req, res, next) => {
 };
 
 module.exports = ipBanMiddleware;
+module.exports.invalidateIPBanCache = invalidateIPBanCache;

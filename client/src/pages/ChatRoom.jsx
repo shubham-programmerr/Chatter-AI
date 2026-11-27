@@ -24,23 +24,34 @@ const ChatRoom = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [botError, setBotError] = useState('');
 
-  // Fetch room details and messages
+  // Fetch room details and messages in parallel
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !token) return;
 
     const fetchData = async () => {
       try {
-        // Fetch current room directly
-        const currentRoomRes = await axios.get(`${API_URL}/rooms/${roomId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const headers = { Authorization: `Bearer ${token}` };
+        const [currentRoomRes, messagesRes] = await Promise.all([
+          axios.get(`${API_URL}/rooms/${roomId}`, { headers }),
+          axios.get(`${API_URL}/messages/room/${roomId}?compact=1`, { headers })
+        ]);
         setRoom(currentRoomRes.data);
 
-        // Fetch messages for this room
-        const messagesRes = await axios.get(`${API_URL}/messages/room/${roomId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setMessages(messagesRes.data);
+        const data = messagesRes.data;
+        if (Array.isArray(data)) {
+          setMessages(data);
+        } else {
+          const profiles = data.profiles || {};
+          const hydrated = (data.messages || []).map((msg) => {
+            const senderId = msg.sender?._id;
+            if (!senderId || !profiles[senderId]) return msg;
+            return {
+              ...msg,
+              sender: { ...msg.sender, ...profiles[senderId] }
+            };
+          });
+          setMessages(hydrated);
+        }
 
         setLoading(false);
       } catch (error) {
@@ -50,7 +61,7 @@ const ChatRoom = () => {
     };
 
     fetchData();
-  }, [roomId]);
+  }, [roomId, token]);
 
   // Join room via socket
   useEffect(() => {

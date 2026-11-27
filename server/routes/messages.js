@@ -10,25 +10,53 @@ router.get('/room/:roomId', authMiddleware, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
+    const compact = req.query.compact === '1';
 
     // SECURITY: IDOR Check - verify user has access to this room
     const Room = require('../models/Room');
-    const room = await Room.findById(req.params.roomId);
+    const room = await Room.findById(req.params.roomId).select('isPrivate owner users').lean();
     
     if (!room) return res.status(404).json({ error: 'Room not found' });
 
     if (room.isPrivate) {
       const isOwner = room.owner && room.owner.toString() === req.userId;
       const isMember = room.users.some(u => u.toString() === req.userId);
-      
-      const User = require('../models/User');
-      const user = await User.findById(req.userId);
-      const isAdmin = user && user.isAdmin;
 
-      if (!isOwner && !isMember && !isAdmin) {
-        console.warn(`🚨 SECURITY: Unauthorized message read attempt by ${req.userId} in room ${room._id}`);
-        return res.status(403).json({ error: 'Access denied' });
+      if (!isOwner && !isMember) {
+        const User = require('../models/User');
+        const user = await User.findById(req.userId).select('isAdmin').lean();
+        if (!user?.isAdmin) {
+          console.warn(`🚨 SECURITY: Unauthorized message read attempt by ${req.userId} in room ${room._id}`);
+          return res.status(403).json({ error: 'Access denied' });
+        }
       }
+    }
+
+    if (compact) {
+      const messages = await Message.find({ room: req.params.roomId })
+        .populate('sender', 'username')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+      const senderIds = [...new Set(messages.map(m => m.sender?._id?.toString()).filter(Boolean))];
+      const profiles = {};
+      if (senderIds.length > 0) {
+        const User = require('../models/User');
+        const senderDocs = await User.find({ _id: { $in: senderIds } })
+          .select('username avatar profilePicture')
+          .lean();
+        senderDocs.forEach((u) => {
+          profiles[u._id.toString()] = {
+            username: u.username,
+            avatar: u.avatar || '',
+            profilePicture: u.profilePicture || ''
+          };
+        });
+      }
+
+      return res.json({ messages: messages.reverse(), profiles });
     }
 
     const messages = await Message.find({ room: req.params.roomId })

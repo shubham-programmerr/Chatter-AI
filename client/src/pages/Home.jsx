@@ -27,8 +27,11 @@ const Home = () => {
   }, [token, loading, navigate]);
 
   useEffect(() => {
-    fetchRooms();
-  }, []);
+    if (token) {
+      fetchRooms();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const fetchRooms = async (page = 1) => {
     setIsLoadingRooms(true);

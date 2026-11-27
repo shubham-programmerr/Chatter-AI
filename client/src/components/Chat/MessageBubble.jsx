@@ -11,10 +11,7 @@ const MessageBubble = ({ message, isCurrentUser, isBot, onReact }) => {
 
   // Get user display picture or fallback to initial
   const getUserDP = () => {
-    if (message.sender?.profilePicture) {
-      return message.sender.profilePicture;
-    }
-    return null;
+    return message.sender?.profilePicture || message.sender?.avatar || null;
   };
 
   const handleReaction = (emoji) => {
